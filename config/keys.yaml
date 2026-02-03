@@ -1,0 +1,458 @@
+##################################################
+#          DUNE MetaData Specification           #
+##################################################
+
+# This file attempts to define a standard metadata spec, based on:
+# 1. The DUNE DataCatalogDocs glossary: https://dune.github.io/DataCatalogDocs/glossary.html
+# 2. Old scripts from data-mgmt-ops: https://github.com/DUNE/data-mgmt-ops/tree/master/utilities
+# 3. Existing metadata values found by scanning the MetaCat database
+
+# For each metadata key, we define:
+# - description: A human-readable description of the key
+# - deprecated: For deprecated keys, name of replacement key (if any)
+# - required: Condition under which the key is required (default: false)
+# - type: The data type of the value (str, int, float, bool, list, dict)
+# - merge: How to combine values from multiple files (sum, min, max, union, intersection)
+# - default: A default value if none is provided
+# - options: A mapping of specific allowed values to human-readable descriptions
+# - deprecated_options: Additional options that appear in MetaCat but are no longer allowed
+# - fixes: A mapping of incorrect values to their corrected values
+
+##################################################
+#               Generally Required               #
+##################################################
+
+core.data_stream:
+    description: "Type of data taking"
+    required: true
+    type: str
+    options:
+        "noise":
+        "cosmics":
+        "calibration":
+        "physics":
+        "commissioning":
+        "pedestal":
+        "trigprim":
+        "g4beamline":
+        "neutrino":
+        "antineutrino":
+        "simulation":
+        "source":
+        "laser":
+        "hvramp":
+        "test":
+        "test_hv_ramp":
+        "test_hv_ramp_above_nominal":
+        "test_hv_ramp_down":
+        "test_no_hv":
+        "test_pump":
+        "test_flourine18_source":
+        "test_scans":
+        "test_reduced_top_flow":
+        "pdstl":                    "Minerva pedestal"
+        "linjc":                    "Minerva light injection"
+        "numib":                    "Minerva numi beam"
+        "numip":                    "Minerva numi beam with interspersed pedestal data"
+        "numil":                    "Minerva numi beam with interspersed light injection data"
+    deprecated_options:
+        "out1":
+        "out2":
+        "study":
+    fixes:
+        "Test":                     "test"
+        "tests":                    "test"
+        "Cosmics":                  "cosmics"
+        "cosmic":                   "cosmics"
+        "numibeam":                 "numib"
+        "comissioning":             "commissioning"
+
+core.data_tier:
+    description: "Step in data processing sequence"
+    required: true
+    type: str
+    options:
+        "simulated":
+        "raw":
+        "hit-reconstructed":
+        "full-reconstructed":
+        "dst-reconstructed":
+        "generated":
+        "detector-simulated":
+        "root-tuple":
+        "root-hist":
+        "decoded-raw":
+        "pandora-info":
+        "pandora-reconstruction":
+        "reco-recalibrated":
+        "root-tuple-virtual":
+        "trigprim":
+        "sliced":
+        "binary-raw":
+        "flow":
+        "flow-calibration":
+        "caf":
+        "caf-analysis":
+        "caf-flat-analysis":
+        "genie":
+        "genie-event-generator":
+        "genie-spill-build-rock-overlay":
+        "spill-builder-overlay":
+        "spill-builder-full":
+        "reco_pandora":
+        "reco_spine":
+    deprecated_options:
+        "test":
+        "stage1":
+        "stage2":
+        "sam-user":
+        "dc1input":
+    fixes:
+        "pandora_info":             "pandora-info"
+        "trigger-primitives":       "trigprim"
+
+core.event_count:
+    description: "Number of events contained in the file"
+    required: true
+    type: int
+    merge: sum
+
+core.file_content_status:
+    description: "Status of the file"
+    required: true
+    type: str
+    default: "good"
+    options:
+        "good":
+        "recovered":
+        "bad":
+
+core.file_format:
+    description: "Format of the data"
+    required: true
+    type: str
+    options:
+        "root":
+        "artroot":
+        "binary":
+        "rootntuple":
+        "hdf5":
+        "tar":
+    deprecated_options:
+        "unknown":
+    fixes:
+        "tfile": "root"
+
+core.file_type:
+    description: "Flag distinguishing between real and simulated data"
+    required: true
+    type: str
+    options:
+        "mc":                       "Monte Carlo simulated data"
+        "detector":                 "Real detector data"
+    deprecated_options:
+        "importedDetector":         "Minerva imported detector data"
+        "unknown":
+        "test-data":
+        "binary":
+        "photon_detector":
+        "test":
+        "dc1simdaq":
+    fixes:
+        "data":                     "detector"
+        "montecarlo":               "mc"
+
+core.run_type:
+    description: "Detector that produced the data"
+    required: true
+    type: str
+    options:
+        "test":
+        "protodune-sp":             "ProtoDUNE Single Phase"
+        "protodune-dp":             "ProtoDUNE Dual Phase"
+        "iceberg":
+        "np04_vst":
+        "hd-coldbox":
+        "vd-coldbox":
+        "vd-coldbox-bottom":
+        "vd-coldbox-top":
+        "hd-protodune":             "ProtoDUNE Horizontal Drift"
+        "vd-protodune":             "ProtoDUNE Vertical Drift"
+        "vd-protodune-pds":
+        "dc4-vd-coldbox-bottom":
+        "dc4-vd-coldbox-top":
+        "dc4-hd-protodune":
+        "neardet":                  "Near Detector"
+        "neardet-lar":
+        "neardet-2x2":
+        "neardet-2x2-lar":
+        "neardet-2x2-lar-charge":
+        "neardet-2x2-lar-light":
+        "neardet-2x2-minerva":
+        "fardet":                   "Far Detector"
+        "fardet-sp":                "Far Detector Single Phase"
+        "fardet-hd":                "Far Detector Horizontal Drift"
+        "fardet-vd":                "Far Detector Vertical Drift"
+        "311":
+        "311_dp_light":
+    deprecated_options:
+        "physics":
+        "ehn1-beam-np04":
+        "justin-tutorial":          "JustIn tutorial data"
+    fixes:
+        "protodune-hd":             "hd-protodune"
+
+core.runs:
+    description: "List of run numbers contained in the file"
+    required: true
+    type: list
+    merge: union
+
+core.runs_subruns:
+    description: "List of subruns in run*100000+subrun format"
+    required: true
+    type: list
+    merge: union
+
+retention.status:
+    description: "Flag to tell if the file is being used and should be retained"
+    required: true
+    type: str
+    default: "active"
+    options:
+        "active":
+
+retention.class:
+    description: "Flag used to determine retention status"
+    required: true
+    type: str
+    default: "unknown"
+    options:
+        "unknown":
+        "physics":
+        "simulation":
+        "rawdata":
+        "commissioning":
+        "test":
+    deprecated_options:
+        "other":
+        "study":
+
+
+##################################################
+#              Optional but Useful               #
+##################################################
+
+core.start_time:
+    description: "Unix UTC time at which the process that created the file started"
+    type: float
+
+core.end_time:
+    description: "Unix UTC time at which the process that created the file ended"
+    type: float
+
+core.events:
+    description: "List of event numbers included (not useful for multi-run files)"
+    type: list
+    merge: union
+
+core.first_event_number:
+    description: "First event number in the file"
+    required: "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
+    type: int
+    merge: min
+
+core.last_event_number:
+    description: "Last event number in the file"
+    required: "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
+    type: int
+    merge: max
+
+##################################################
+#          Simulation & Reconstruction           #
+##################################################
+
+dune.campaign:
+    description: "Name of a large-scale production activity"
+    type: str
+
+dune.requestid:
+    description: "The formal request id for the campaign in the system"
+    type: str
+
+dune.config_file:
+    description: "The top level configuration used to produce the file"
+    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    type: str
+
+dune.workflow:
+    description: "Dictionary of workflow information produced by the JustIn system"
+    type: dict
+    merge: intersection
+
+dune.output_status:
+    description: "Whether the output file was successfully added to the system"
+    type: str
+    default: "confirmed"
+    options:
+        "confirmed":
+    deprecated_options:
+        "recorded":
+        "uploaded":
+        "good":
+        "merged":
+
+core.application.family:
+    description: "Broad category of the application that produced the file"
+    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    type: str
+
+core.application.name:
+    description: "Name of the specific application that produced the file"
+    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    type: str
+
+core.application.version:
+    description: "DUNESW version of the application that produced the file"
+    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    type: str
+
+origin.applications.names:
+    description: "Ordered list of application names that have processed the file"
+    type: list
+
+origin.applications.versions:
+    description: "Mapping from application names to associated DUNESW version"
+    type: dict
+
+origin.applications.config_files:
+    description: "Mapping from application names to associated configuration file"
+    type: dict
+
+##################################################
+#              Monte Carlo - General             #
+##################################################
+
+core.group:
+    description: "Name of the physics group that produced the file"
+    type: str
+    options:
+        "dune":                     "Deep Underground Neutrino Experiment"
+    deprecated_options:
+        "lbne":                     "Long Baseline Neutrino Experiment"
+        "minerva":                  "Minerva Experiment"
+
+dune_mc.gen_fcl_filename:
+    description: "Generator fcl file used to produce the simulation"
+    required: "core.file_type == 'mc'"
+    type: str
+
+dune_mc.geometry_version:
+    description: "Geometry version used to produce the simulation"
+    required: "core.file_type == 'mc'"
+    type: str
+
+dune_mc.generators:
+    type: str
+
+##################################################
+#     Monte Carlo - ProtoDune / Far Detector     #
+##################################################
+
+dune_mc.liquid_flow:
+    description: "Whether liquid flow is simulated"
+    type: str
+    options:
+        "yes":
+        "no":
+
+dune_mc.electron_lifetime:
+    description: "Electron lifetime used in the simulation (e.g. '35ms')"
+    type: str
+
+dune_mc.space_charge:
+    description: "Whether space charge effects are simulated"
+    type: str
+    options:
+        "yes":
+        "no":
+
+dune_mc.with_cosmics:
+    description: "Whether cosmic rays are included in the simulation"
+    type: int
+    options:
+        0:                          "no"
+        1:                          "yes"
+
+beam.momentum:
+    type: float
+
+beam.polarity:
+    type: int
+    options:
+        1:
+        -1:
+
+##################################################
+#                    Merging                     #
+##################################################
+
+merge.method:
+    description: "Name of the merging method used"
+    type: str
+
+merge.cmd:
+    description: "Command used to merge files"
+    type: str
+
+merge.script:
+    description: "Runner script used to perform the merge"
+    type: str
+
+merge.cfg:
+    description: "Configuration file for merging runner script"
+    type: str
+
+merge.query:
+    description: "MetaCat query used to select files for merging"
+    type: str
+
+merge.dataset:
+    description: "Name of the dataset being merged"
+    type: str
+
+merge.tag:
+    description: "Tag to identify the merge job"
+    type: str
+
+merge.comment:
+    description: "Comment describing the merge job"
+    type: str
+
+merge.skip:
+    description: "Number of files skipped during merging"
+    type: int
+
+merge.limit:
+    description: "Maximum number of files to merge"
+    type: int
+
+merge.timestamp:
+    description: "Timestamp when the merge was performed"
+    type: str
+
+merge.version:
+    description: "Version of the merging software used"
+    type: str
+
+merge.hash:
+    description: "Hash of input files used in the merge"
+    deprecated:
+    type: str
+
+##################################################
+#                 Miscellaneous                  #
+##################################################
+
+dune.daq_test:
+    type: bool
