@@ -3,8 +3,7 @@ Utilities for catching errors in DUNE metadata
 
 I will be copying over my metadata error checking code from Merge-Utils, and then expanding this to be a more general metadata checking tool.  We might also try to roll in some scripts for generating metadata later.
 
-To begin with, I would like some input on the metadata specification defined in config/keys.yaml
-In particular, I need help with:
+To begin with, I would like some input on the metadata specification defined in config/keys.yaml.  In particular, I need help with:
   1. Reviewing my preliminary lists of good options, deprecated options, and fixes for invalid options
   2. Adding human-readable descriptions for non-obvious options
   3. Defining the conditions under which various keys are required in the metadata (e.g. "core.file_type == 'mc'")
