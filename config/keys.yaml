@@ -9,14 +9,19 @@
 
 # For each metadata key, we define:
 # - description: A human-readable description of the key
-# - deprecated: For deprecated keys, name of replacement key (if any)
+# - deprecated: Mark the key as deprecated (default: false)
 # - required: Condition under which the key is required (default: false)
 # - type: The data type of the value (str, int, float, bool, list, dict)
 # - merge: How to combine values from multiple files (sum, min, max, union, intersection)
 # - default: A default value if none is provided
 # - options: A mapping of specific allowed values to human-readable descriptions
-# - deprecated_options: Additional options that appear in MetaCat but are no longer allowed
+# - old_options: Additional options that appear in MetaCat but are no longer allowed
 # - fixes: A mapping of incorrect values to their corrected values
+
+# Alternatively, invalid or deprecated keys can simply map to their replacement
+# (e.g. 'progenitor.applications.names: origin.applications.names')
+# Square brackets can be used to add to a list or dict
+# (e.g. 'progenitor.detsim.version: origin.applications.versions['detsim']')
 
 ##################################################
 #               Generally Required               #
@@ -55,7 +60,7 @@ core.data_stream:
         "numib":                    "Minerva numi beam"
         "numip":                    "Minerva numi beam with interspersed pedestal data"
         "numil":                    "Minerva numi beam with interspersed light injection data"
-    deprecated_options:
+    old_options:
         "out1":
         "out2":
         "study":
@@ -101,7 +106,7 @@ core.data_tier:
         "spill-builder-full":
         "reco_pandora":
         "reco_spine":
-    deprecated_options:
+    old_options:
         "test":
         "stage1":
         "stage2":
@@ -138,7 +143,7 @@ core.file_format:
         "rootntuple":
         "hdf5":
         "tar":
-    deprecated_options:
+    old_options:
         "unknown":
     fixes:
         "tfile": "root"
@@ -150,7 +155,7 @@ core.file_type:
     options:
         "mc":                       "Monte Carlo simulated data"
         "detector":                 "Real detector data"
-    deprecated_options:
+    old_options:
         "importedDetector":         "Minerva imported detector data"
         "unknown":
         "test-data":
@@ -195,7 +200,7 @@ core.run_type:
         "fardet-vd":                "Far Detector Vertical Drift"
         "311":
         "311_dp_light":
-    deprecated_options:
+    old_options:
         "physics":
         "ehn1-beam-np04":
         "justin-tutorial":          "JustIn tutorial data"
@@ -234,7 +239,7 @@ retention.class:
         "rawdata":
         "commissioning":
         "test":
-    deprecated_options:
+    old_options:
         "other":
         "study":
 
@@ -296,7 +301,7 @@ dune.output_status:
     default: "confirmed"
     options:
         "confirmed":
-    deprecated_options:
+    old_options:
         "recorded":
         "uploaded":
         "good":
@@ -342,7 +347,7 @@ core.group:
     type: str
     options:
         "dune":                     "Deep Underground Neutrino Experiment"
-    deprecated_options:
+    old_options:
         "lbne":                     "Long Baseline Neutrino Experiment"
         "minerva":                  "Minerva Experiment"
 
@@ -455,7 +460,7 @@ merge.version:
 
 merge.hash:
     description: "Hash of input files used in the merge"
-    deprecated:
+    deprecated: true
     type: str
 
 ##################################################
@@ -466,13 +471,31 @@ dune.daq_test:
     type: bool
 
 ##################################################
-#               Probably Obsolete?               #
+#      Old Versions of origin.applications       #
 ##################################################
 
-artdaq.timestamp
-artdaq.version
-artdaq-core.timestamp: artdaq.timestamp
-artdaq-core.version: artdaq.version
+progenitor.applications:                # needs special handling to split list of dicts
+core.progenitor_application_names:      origin.applications.names
+progenitor.applications.names:          origin.applications.names
+progenitor.application_names:           origin.applications.names
+core.progenitor_config_files:           origin.applications.config_files
+progenitor.applications.config_files:   origin.applications.config_files
+progenitor.config_files:                origin.applications.config_files
+core.progenitor_application_versions:   origin.applications.versions
+progenitor.applications.versions:       origin.applications.versions
+progenitor.application_versions:        origin.applications.versions
+progenitor.gen.version:                 origin.applications.versions['gen']
+progenitor.g4_stage1.version:           origin.applications.versions['g4_stage1']
+progenitor.g4_stage2.version:           origin.applications.versions['g4_stage2']
+progenitor.detsim.version:              origin.applications.versions['detsim']
+progenitor.gen.config_file:             origin.applications.config_files['gen']
+progenitor.g4_stage1.config_file:       origin.applications.config_files['g4_stage1']
+progenitor.g4_stage2.config_file:       origin.applications.config_files['g4_stage2']
+progenitor.detsim.config_file:          origin.applications.config_files['detsim']
+
+##################################################
+#              Still in Use in 2025              #
+##################################################
 
 art.file_format_era
 art.file_format_version
@@ -480,126 +503,148 @@ art.first_event
 art.last_event
 art.process_name
 art.run_type
-art.variation
-core.campaign: dune.campaign
-core.end_time_utc_text
 core.lum_block_ranges
-core.parents
-core.process_id
-core.progenitor_application_names
-core.progenitor_application_versions
-core.progenitor_config_files
-core.start_time_utc_text
 core.subruns
 core.wobconf
-custom.field
-daq.felix_status
-daq.readout
-data_quality.do_not_process
-data_quality.is_junk
-data_quality.online_good_run_list
-dataset.tag
-detector.crt_status
-detector.hv_status
-detector.hv_value
-detector.pd_status
-detector.tpc_status
-dune-artdaq.timestamp
-dune-artdaq.version
 dune_data.accouple
-DUNE_data.accouple
-dune_data.calibpulsedac
 dune_data.calibpulsemode
-DUNE_data.calibpulsemode
-dune_data.comment
 dune_data.daqconfigname
-DUNE_data.DAQConfigName
 dune_data.detector_config
-DUNE_data.detector_config
-DUNE_data.detector_config.object
-dune_data.detector_type
 dune_data.febaselinehigh
-DUNE_data.febaselinehigh
 dune_data.fegain
-DUNE_data.fegain
-dune_data.feleak10x
-DUNE_data.feleak10x
-dune_data.feleakhigh
-DUNE_data.feleakhigh
-dune_data.feshapingtime
-DUNE_data.feshapingtime
-dune_data.inconsistent_hw_config
-DUNE_data.inconsistent_hw_config
-dune_data.is_fake_data
-DUNE_data.is_fake_data
 dune.dataset_name
-dune.datataking
-dune.dc2_production_status
 dune.dqc_quality
 dune.fcl_name
-DUNE.fcl_name
-dune.fcl_path
-DUNE.fcl_path
 dune.fcl_version_tag
-DUNE.fcl_version_tag
-dune.generators
-DUNE.generators
 dune.lrs_active_config
 dune.lrs_active_thresholds
 dune_mc.beam_dataset
-dune_mc.beam_energy
-DUNE_MC.beam_energy
-dune_mc.beam_flux_id
-dune_mc.beam_flux_ID
-dune_mc.beam_polarity
 dune_mc.detector_type
-DUNE_MC.detector_type
-dune_mc.generators_version
-dune_mc.gen_fcl_file # should be filename
+dune_mc.gen_fcl_file:           dune_mc.gen_fcl_filename
+dune.mc.gen_fcl_filename:       dune_mc.gen_fcl_filename
 dune_mc.genie_tune
-dune_mc.h4_input_file
-dune_mc.h4_input_iteration
-dune_mc.miscellaneous
-dune_mc.mixerconfig
 dune_mc.momentum
 dune_mc.momentum_polarity
 dune_mc.name
-DUNE_MC.name
-dune_mc.neutrino_flavors
 dune_mc.nu
 dune_mc.rawdigits
 dune_mc.rock
 dune_mc.top_volume
-dune_mc.topvolume
-DUNE_MC.TopVolume
 dune.merging_range
 dune.merging_stage
 dune.mx2x2_global_subrun_numbers
 dune.ndlar_charge_subrun_numbers
 dune.ndlar_light_subrun_numbers
-dune.output_status
-dune.poms_campaign_id
-dune.production_status
-dune-raw-data.timestamp
-dune-raw-data.version
 dune.user
 dune.wobconf
-file.2x2_sim.version
 file.category
 file.created_timestamp
 file.creator
 file.fireworks4dune.version
 file.gdml
 file.gen_location
-file.ND_Production.version
 file.nu
-file.POT
 file.processing.status
 file.rock
+
+##################################################
+#      Last Used in 2024 - Maybe Obsolete?       #
+##################################################
+
+core.campaign
+core.parents
+dune.fcl_path
+dune_mc.h4_input_file
+dune_mc.h4_input_iteration
+dune_mc.beam_energy
 info.cpusec
 info.memory
-info.physicsgroup
 info.wallsec
+info.physicsgroup
+online.triggertype
+online.triggerconfig
+mc.liquid_flow
+mc.space_charge
+mc.with_cosmics
+misc.file_partition
+x.end_time
+x.start_time
+x.content_status
+
+##################################################
+#     Last Used in 2023 - Possibly Obsolete?     #
+##################################################
+
+core.process_id
+core.end_time_utc_text
+core.start_time_utc_text
+dataset.tag
+dune.datataking
+dune.generators
+dune_data.feleak10x
+dune_data.feleakhigh
+dune_data.is_fake_data
+dune_data.feshapingtime
+dune_data.detector_config.object
+dune_data.inconsistent_hw_config
+dune_mc.mixerconfig
+dune_mc.beam_flux_id
+dune_mc.beam_polarity
+dune_mc.generators_version
+dune_mc.topvolume
+lbnf_mc.horncurrent
+misc.parents
+origin.worker_id
+x.user
+x.group
+x.application
+x.checksum
+
+##################################################
+#      Last Used in 2022 - Likely Obsolete?      #
+##################################################
+
+art.variation
+detector.hv_value
+data_quality.online_good_run_list
+dune_data.calibpulsedac
+
+##################################################
+#     Last Used in 2021 - Probably Obsolete?     #
+##################################################
+
+artdaq.version:
+artdaq-core.version:        artdaq.version
+dune-artdaq.version:        artdaq.version
+dune-raw-data.version:      artdaq.version
+artdaq.timestamp:
+artdaq-core.timestamp:      artdaq.timestamp
+dune-artdaq.timestamp:      artdaq.timestamp
+dune-raw-data.timestamp:    artdaq.timestamp
+
+##################################################
+#   Not Used since 2020 - Definitely Obsolete    #
+##################################################
+
+core.application_version
+custom.field
+daq.felix_status
+daq.readout
+data_quality.do_not_process
+data_quality.is_junk
+detector.crt_status
+detector.hv_status
+detector.pd_status
+detector.tpc_status
+dune_data.comment
+dune_data.detector_type
+dune.dc2_production_status
+dune_mc.miscellaneous
+dune_mc.neutrino_flavors
+dune.poms_campaign_id
+dune.production_status
+file.nd_production.version
+file.pot
 lbne_data.detector_type
 lbne_data.detector_type.object
 lbne_data.name
@@ -612,15 +657,6 @@ lbne_mc.miscellaneous
 lbne_mc.name
 lbne_mc.neutrino_flavors
 lbne_mc.production_campaign
-LBNF_MC.HornCurrent
-mc.liquid_flow
-MC.liquid_flow
-mc.space_charge
-MC.space_charge
-mc.with_cosmics
-MC.with_cosmics
-misc.file_partition
-misc.parents
 online.category
 online.daq_config
 online.daq_host
@@ -628,33 +664,9 @@ online.run
 online.runnumber
 online.subrun
 online.timestamp
-online.triggerconfig
-online.triggertype
-origin.applications.config_files
-origin.applications.names
-origin.applications.versions
-origin.worker_id
-progenitor.application_names
-progenitor.applications
-progenitor.applications.config_files
-progenitor.applications.names
-progenitor.applications.versions
-progenitor.application_versions
-progenitor.config_files
-progenitor.detsim.config_file
-progenitor.detsim.version
-progenitor.g4_stage1.config_file
-progenitor.g4_stage1.version
-progenitor.g4_stage2.config_file
-progenitor.g4_stage2.version
-progenitor.gen.config_file
-progenitor.gen.version
-retention.class
-retention.status
-x.application
-x.checksum
-x.content_status
-x.end_time
-x.group
-x.start_time
-x.user
+
+##################################################
+#                    Invalid                     #
+##################################################
+
+file.2x2_sim.version:
