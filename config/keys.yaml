@@ -9,7 +9,7 @@
 
 # For each metadata key, we define:
 # - description: A human-readable description of the key
-# - deprecated: Mark the key as deprecated (default: false)
+# - deprecated: Reason why the key is deprecated, if applicable
 # - required: Condition under which the key is required (default: false)
 # - type: The data type of the value (str, int, float, bool, list, dict)
 # - merge: How to combine values from multiple files (sum, min, max, union, intersection)
@@ -22,6 +22,8 @@
 # (e.g. 'progenitor.applications.names: origin.applications.names')
 # Square brackets can be used to add to a list or dict
 # (e.g. 'progenitor.detsim.version: origin.applications.versions['detsim']')
+# Keys mapping to nothing are deprecated with no replacement, but should be given a description
+# and marked deprecated instead to provide more helpful error messages 
 
 ##################################################
 #               Generally Required               #
@@ -356,6 +358,9 @@ dune_mc.gen_fcl_filename:
     required: "core.file_type == 'mc'"
     type: str
 
+dune_mc.gen_fcl_file:           dune_mc.gen_fcl_filename
+dune.mc.gen_fcl_filename:       dune_mc.gen_fcl_filename
+
 dune_mc.geometry_version:
     description: "Geometry version used to produce the simulation"
     required: "core.file_type == 'mc'"
@@ -368,16 +373,16 @@ dune_mc.generators:
 #     Monte Carlo - ProtoDune / Far Detector     #
 ##################################################
 
+dune_mc.electron_lifetime:
+    description: "Electron lifetime used in the simulation (e.g. '35ms')"
+    type: str
+
 dune_mc.liquid_flow:
     description: "Whether liquid flow is simulated"
     type: str
     options:
         "yes":
         "no":
-
-dune_mc.electron_lifetime:
-    description: "Electron lifetime used in the simulation (e.g. '35ms')"
-    type: str
 
 dune_mc.space_charge:
     description: "Whether space charge effects are simulated"
@@ -401,6 +406,10 @@ beam.polarity:
     options:
         1:
         -1:
+
+mc.liquid_flow:     dune_mc.liquid_flow
+mc.space_charge:    dune_mc.space_charge
+mc.with_cosmics:    dune_mc.with_cosmics
 
 ##################################################
 #                    Merging                     #
@@ -460,7 +469,7 @@ merge.version:
 
 merge.hash:
     description: "Hash of input files used in the merge"
-    deprecated: true
+    deprecated: "Early attempt to identify merge jobs, superseded by tag"
     type: str
 
 ##################################################
@@ -494,120 +503,122 @@ progenitor.g4_stage2.config_file:       origin.applications.config_files['g4_sta
 progenitor.detsim.config_file:          origin.applications.config_files['detsim']
 
 ##################################################
-#              Still in Use in 2025              #
+#              Still in Use in 2026              #
 ##################################################
 
-art.file_format_era
-art.file_format_version
-art.first_event
-art.last_event
-art.process_name
-art.run_type
-core.lum_block_ranges
-core.subruns
-core.wobconf
-dune_data.accouple
-dune_data.calibpulsemode
-dune_data.daqconfigname
-dune_data.detector_config
-dune_data.febaselinehigh
-dune_data.fegain
-dune.dataset_name
-dune.dqc_quality
-dune.fcl_name
-dune.fcl_version_tag
-dune.lrs_active_config
-dune.lrs_active_thresholds
-dune_mc.beam_dataset
-dune_mc.detector_type
-dune_mc.gen_fcl_file:           dune_mc.gen_fcl_filename
-dune.mc.gen_fcl_filename:       dune_mc.gen_fcl_filename
-dune_mc.genie_tune
-dune_mc.momentum
-dune_mc.momentum_polarity
-dune_mc.name
-dune_mc.nu
-dune_mc.rawdigits
-dune_mc.rock
-dune_mc.top_volume
-dune.merging_range
-dune.merging_stage
-dune.mx2x2_global_subrun_numbers
-dune.ndlar_charge_subrun_numbers
-dune.ndlar_light_subrun_numbers
-dune.user
-dune.wobconf
-file.category
-file.created_timestamp
-file.creator
-file.fireworks4dune.version
-file.gdml
-file.gen_location
-file.nu
-file.processing.status
-file.rock
+art.file_format_era:
+art.file_format_version:
+art.first_event:
+art.last_event:
+art.process_name:
+art.run_type:
+core.subruns:
+dune.dataset_name:
+dune.dqc_quality:
+dune.lrs_active_config:
+dune.lrs_active_thresholds:
+dune_mc.detector_type:
+dune_mc.genie_tune:
+dune_mc.name:
+dune_mc.nu:
+dune_mc.rawdigits:
+dune_mc.rock:
+dune_mc.top_volume:
+dune.user:
+dune.wobconf:
+
+##################################################
+#   Last Used in 2025 - Probably Still In Use?   #
+##################################################
+
+core.lum_block_ranges:
+core.wobconf:
+dune.fcl_name:
+dune.fcl_version_tag:
+dune.merging_range:
+dune.merging_stage:
+dune.mx2x2_global_subrun_numbers:
+dune.ndlar_charge_subrun_numbers:
+dune.ndlar_light_subrun_numbers:
+dune_data.accouple:
+dune_data.calibpulsemode:
+dune_data.daqconfigname:
+dune_data.detector_config:
+dune_data.febaselinehigh:
+dune_data.fegain:
+dune_data.feleak10x:
+dune_data.feleakhigh:
+dune_data.feshapingtime:
+dune_data.inconsistent_hw_config:
+dune_data.is_fake_data:
+dune_mc.beam_dataset:
+dune_mc.momentum:
+dune_mc.momentum_polarity:
+file.category:
+file.creator:
+file.created_timestamp:
+file.gdml:
+file.nu:
+file.pot:
+file.rock:
+file.fireworks4dune.version:
+file.nd_production.version:
+file.gen_location:
+file.processing.status:
 
 ##################################################
 #      Last Used in 2024 - Maybe Obsolete?       #
 ##################################################
 
-core.campaign
-core.parents
-dune.fcl_path
-dune_mc.h4_input_file
-dune_mc.h4_input_iteration
-dune_mc.beam_energy
-info.cpusec
-info.memory
-info.wallsec
-info.physicsgroup
-online.triggertype
-online.triggerconfig
-mc.liquid_flow
-mc.space_charge
-mc.with_cosmics
-misc.file_partition
-x.end_time
-x.start_time
-x.content_status
+core.campaign:
+core.parents:
+dune.fcl_path:
+dune_mc.h4_input_file:
+dune_mc.h4_input_iteration:
+dune_mc.beam_energy:
+info.cpusec:
+info.memory:
+info.wallsec:
+info.physicsgroup:
+online.triggertype:
+online.triggerconfig:
+misc.file_partition:
+x.end_time:
+x.start_time:
+x.content_status:
 
 ##################################################
 #     Last Used in 2023 - Possibly Obsolete?     #
 ##################################################
 
-core.process_id
-core.end_time_utc_text
-core.start_time_utc_text
-dataset.tag
-dune.datataking
-dune.generators
-dune_data.feleak10x
-dune_data.feleakhigh
-dune_data.is_fake_data
-dune_data.feshapingtime
-dune_data.detector_config.object
-dune_data.inconsistent_hw_config
-dune_mc.mixerconfig
-dune_mc.beam_flux_id
-dune_mc.beam_polarity
-dune_mc.generators_version
-dune_mc.topvolume
-lbnf_mc.horncurrent
-misc.parents
-origin.worker_id
-x.user
-x.group
-x.application
-x.checksum
+core.process_id:
+core.end_time_utc_text:
+core.start_time_utc_text:
+dataset.tag:
+dune.datataking:
+dune.generators:
+dune_data.detector_config.object:
+dune_mc.mixerconfig:
+dune_mc.beam_flux_id:
+dune_mc.beam_polarity:
+dune_mc.generators_version:
+dune_mc.topvolume:
+lbnf_mc.horncurrent:
+misc.parents:
+origin.worker_id:
+x.user:
+x.group:
+x.application:
+x.checksum:
 
 ##################################################
 #      Last Used in 2022 - Likely Obsolete?      #
 ##################################################
 
-art.variation
-detector.hv_value
-data_quality.online_good_run_list
-dune_data.calibpulsedac
+art.variation:
+detector.hv_value:
+data_quality.online_good_run_list:
+dune_data.calibpulsedac:
 
 ##################################################
 #     Last Used in 2021 - Probably Obsolete?     #
@@ -623,47 +634,50 @@ dune-artdaq.timestamp:      artdaq.timestamp
 dune-raw-data.timestamp:    artdaq.timestamp
 
 ##################################################
-#   Not Used since 2020 - Definitely Obsolete    #
+#     Last Used in 2020 - Probably Obsolete?     #
 ##################################################
 
-core.application_version
-custom.field
-daq.felix_status
-daq.readout
-data_quality.do_not_process
-data_quality.is_junk
-detector.crt_status
-detector.hv_status
-detector.pd_status
-detector.tpc_status
-dune_data.comment
-dune_data.detector_type
-dune.dc2_production_status
-dune_mc.miscellaneous
-dune_mc.neutrino_flavors
-dune.poms_campaign_id
-dune.production_status
-file.nd_production.version
-file.pot
-lbne_data.detector_type
-lbne_data.detector_type.object
-lbne_data.name
-lbne_data.run_mode
-lbne_mc.beam_flux_id
-lbne_mc.detector_type
-lbne_mc.generators
-lbne_mc.geometry_version
-lbne_mc.miscellaneous
-lbne_mc.name
-lbne_mc.neutrino_flavors
-lbne_mc.production_campaign
-online.category
-online.daq_config
-online.daq_host
-online.run
-online.runnumber
-online.subrun
-online.timestamp
+dune.production_status:
+dune_data.comment:
+dune_mc.neutrino_flavors:
+
+##################################################
+#  Last Used Before 2020 - Definitely Obsolete   #
+##################################################
+
+core.application_version:
+custom.field:
+daq.felix_status:
+daq.readout:
+data_quality.do_not_process:
+data_quality.is_junk:
+detector.crt_status:
+detector.hv_status:
+detector.pd_status:
+detector.tpc_status:
+dune_data.detector_type:
+dune.dc2_production_status:
+dune_mc.miscellaneous:
+dune.poms_campaign_id:
+lbne_data.detector_type:
+lbne_data.detector_type.object:
+lbne_data.name:
+lbne_data.run_mode:
+lbne_mc.beam_flux_id:
+lbne_mc.detector_type:
+lbne_mc.generators:
+lbne_mc.geometry_version:
+lbne_mc.miscellaneous:
+lbne_mc.name:
+lbne_mc.neutrino_flavors:
+lbne_mc.production_campaign:
+online.category:
+online.daq_config:
+online.daq_host:
+online.run:
+online.runnumber:
+online.subrun:
+online.timestamp:
 
 ##################################################
 #                    Invalid                     #
