@@ -10,6 +10,7 @@
 # For each metadata key, we define:
 # - description: A human-readable description of the key
 # - deprecated: Reason why the key is deprecated, if applicable
+# - replacement: The key that should be used instead, if applicable
 # - required: Condition under which the key is required (default: false)
 # - type: The data type of the value (str, int, float, bool, list, dict)
 # - merge: How to combine values from multiple files (sum, min, max, union, intersection)
