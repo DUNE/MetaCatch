@@ -151,6 +151,14 @@ core.file_format:
     fixes:
         "tfile": "root"
 
+core.format_variant:
+    description: "Variant of the data format"
+    required: "core.data_tier in ['caf']"
+    type: str
+    options:
+        "caf": "Normal caf format"
+        "flat": "flatcaf format"
+
 core.file_type:
     description: "Flag distinguishing between real and simulated data"
     required: true
@@ -242,10 +250,15 @@ retention.class:
         "rawdata":
         "commissioning":
         "test":
+        "virtual": "Temporary intermediate files created during multi-step processing"
     old_options:
         "other":
         "study":
 
+# official dataset metadata?
+#datasetpar.current: boolean
+#datasetpar.diskresident: boolean
+#datasetpar.official: boolean
 
 ##################################################
 #              Optional but Useful               #
