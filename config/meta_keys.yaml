@@ -6,25 +6,57 @@
 # 1. The DUNE DataCatalogDocs glossary: https://dune.github.io/DataCatalogDocs/glossary.html
 # 2. Old scripts from data-mgmt-ops: https://github.com/DUNE/data-mgmt-ops/tree/master/utilities
 # 3. Existing metadata values found by scanning the MetaCat database
-
-# For each metadata key, we define:
+#
+# Metadata key names may only contain lowercase letters, underscores, and periods.
+# They must include at least one period, but may not start or end with a period.
+#
+# For each metadata key, we can define:
 # - description: A human-readable description of the key
-# - deprecated: Reason why the key is deprecated, if applicable
+# - status: Whether the key is current, deprecated, or retired (default: current)
 # - replacement: The key that should be used instead, if applicable
 # - required: Condition under which the key is required (default: false)
-# - type: The data type of the value (str, int, float, bool, list, dict)
+# - type: The data type (str, int, float, bool, list, dict, list[type], dict[key_type,val_type])
 # - merge: How to combine values from multiple files (sum, min, max, union, intersection)
 # - default: A default value if none is provided
 # - options: A mapping of specific allowed values to human-readable descriptions
-# - old_options: Additional options that appear in MetaCat but are no longer allowed
+# - old_options: Additional deprecated options that are allowed but discouraged
+# - bad_options: Additional retired options that exist in the database but are no longer allowed
 # - fixes: A mapping of incorrect values to their corrected values
+# - min: Minimum value for numeric or string types
+# - max: Maximum value for numeric or string types
+# - pattern: A regex pattern that string values must match
+# - special: A special handler function for the key, defined in special.py
+#
+# Alternatively, invalid keys with a direct replacement can simply map to the correct key.
+# (e.g. 'dune.mc.gen_fcl_filename: dune_mc.gen_fcl_filename')
+#
+# Keys mapping to nothing exist in the database, but are assumed to be deprecated.
+# Users familiar with these keys should add the relevant specifcations to this file.
+#
+# Any keys not listed in this file are considered invalid by default.
+#
+# We make a distinction between deprecated and retired/invalid keys and options:
+# - Deprecated values are allowed by the online checker, but MetaCatch will issue an error message
+# - Retired values are not allowed by either checker
 
-# Alternatively, invalid or deprecated keys can simply map to their replacement
-# (e.g. 'progenitor.applications.names: origin.applications.names')
-# Square brackets can be used to add to a list or dict
-# (e.g. 'progenitor.detsim.version: origin.applications.versions['detsim']')
-# Keys mapping to nothing are deprecated with no replacement, but should be given a description
-# and marked deprecated instead to provide more helpful error messages 
+##################################################
+#                   Conditions                   #
+##################################################
+
+CONDITIONS:
+    "CAF": "core.data_tier == 'caf'"
+    "raw": "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
+    "root-tuple": "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    "application output": >
+        core.application is not None
+        or core.application.family is not None
+        or core.application.name is not None
+        or core.application.version is not None
+    "Monte Carlo": "core.file_type == 'mc'"
+    "origin": >
+        origin.applications.names is not None
+        or origin.applications.versions is not None
+        or origin.applications.config_files is not None
 
 ##################################################
 #               Generally Required               #
@@ -123,6 +155,7 @@ core.event_count:
     description: "Number of events contained in the file"
     required: true
     type: int
+    min: 0
     merge: sum
 
 core.file_content_status:
@@ -153,8 +186,9 @@ core.file_format:
 
 core.format_variant:
     description: "Variant of the data format"
-    required: "core.data_tier in ['caf']"
+    required: CAF
     type: str
+    default: "caf"
     options:
         "caf": "Normal caf format"
         "flat": "flatcaf format"
@@ -221,13 +255,13 @@ core.run_type:
 core.runs:
     description: "List of run numbers contained in the file"
     required: true
-    type: list
+    type: list[int]
     merge: union
 
 core.runs_subruns:
     description: "List of subruns in run*100000+subrun format"
     required: true
-    type: list
+    type: list[int]
     merge: union
 
 retention.status:
@@ -274,18 +308,19 @@ core.end_time:
 
 core.events:
     description: "List of event numbers included (not useful for multi-run files)"
-    type: list
+    type: list[int]
     merge: union
 
 core.first_event_number:
     description: "First event number in the file"
-    required: "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
+    required: raw
     type: int
+    min: 0
     merge: min
 
 core.last_event_number:
     description: "Last event number in the file"
-    required: "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
+    required: raw
     type: int
     merge: max
 
@@ -303,7 +338,7 @@ dune.requestid:
 
 dune.config_file:
     description: "The top level configuration used to produce the file"
-    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    required: root-tuple
     type: str
 
 dune.workflow:
@@ -325,34 +360,38 @@ dune.output_status:
 
 core.application:
     description: "Full name of the application, formatted as 'family.name'"
+    required: application output
     type: str
 
 core.application.family:
     description: "Broad category of the application that produced the file"
-    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    required: application output
     type: str
 
 core.application.name:
     description: "Name of the specific application that produced the file"
-    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    required: application output
     type: str
 
 core.application.version:
-    description: "DUNESW version of the application that produced the file"
-    required: "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    description: "Version of the application that produced the file"
+    required: application output
     type: str
 
 origin.applications.names:
     description: "Ordered list of application names that have processed the file"
-    type: list
+    required: origin
+    type: list[str]
 
 origin.applications.versions:
     description: "Mapping from application names to associated DUNESW version"
-    type: dict
+    required: origin
+    type: dict[str, str]
 
 origin.applications.config_files:
     description: "Mapping from application names to associated configuration file"
-    type: dict
+    required: origin
+    type: dict[str, str]
 
 ##################################################
 #              Monte Carlo - General             #
@@ -367,17 +406,16 @@ core.group:
         "lbne":                     "Long Baseline Neutrino Experiment"
         "minerva":                  "Minerva Experiment"
 
-dune_mc.gen_fcl_filename:
-    description: "Generator fcl file used to produce the simulation"
-    required: "core.file_type == 'mc'"
-    type: str
-
 dune_mc.gen_fcl_file:           dune_mc.gen_fcl_filename
 dune.mc.gen_fcl_filename:       dune_mc.gen_fcl_filename
+dune_mc.gen_fcl_filename:
+    description: "Generator fcl file used to produce the simulation"
+    required: Monte Carlo
+    type: str
 
 dune_mc.geometry_version:
     description: "Geometry version used to produce the simulation"
-    required: "core.file_type == 'mc'"
+    required: Monte Carlo
     type: str
 
 dune_mc.generators:
@@ -391,6 +429,7 @@ dune_mc.electron_lifetime:
     description: "Electron lifetime used in the simulation (e.g. '35ms')"
     type: str
 
+mc.liquid_flow:     dune_mc.liquid_flow
 dune_mc.liquid_flow:
     description: "Whether liquid flow is simulated"
     type: str
@@ -398,6 +437,7 @@ dune_mc.liquid_flow:
         "yes":
         "no":
 
+mc.space_charge:    dune_mc.space_charge
 dune_mc.space_charge:
     description: "Whether space charge effects are simulated"
     type: str
@@ -405,6 +445,7 @@ dune_mc.space_charge:
         "yes":
         "no":
 
+mc.with_cosmics:    dune_mc.with_cosmics
 dune_mc.with_cosmics:
     description: "Whether cosmic rays are included in the simulation"
     type: int
@@ -420,10 +461,6 @@ beam.polarity:
     options:
         1:
         -1:
-
-mc.liquid_flow:     dune_mc.liquid_flow
-mc.space_charge:    dune_mc.space_charge
-mc.with_cosmics:    dune_mc.with_cosmics
 
 ##################################################
 #                    Merging                     #
@@ -486,8 +523,8 @@ merge.version:
     type: str
 
 merge.hash:
-    description: "Hash of input files used in the merge"
-    deprecated: "Early attempt to identify merge jobs, superseded by tag"
+    description: "Hash of input files used to identify merge jobs, superseded by merge.tag"
+    status: retired
     type: str
 
 ##################################################
@@ -501,24 +538,81 @@ dune.daq_test:
 #      Old Versions of origin.applications       #
 ##################################################
 
-progenitor.applications:                # needs special handling to split list of dicts
-core.progenitor_application_names:      origin.applications.names
-progenitor.applications.names:          origin.applications.names
-progenitor.application_names:           origin.applications.names
-core.progenitor_config_files:           origin.applications.config_files
-progenitor.applications.config_files:   origin.applications.config_files
-progenitor.config_files:                origin.applications.config_files
-core.progenitor_application_versions:   origin.applications.versions
-progenitor.applications.versions:       origin.applications.versions
-progenitor.application_versions:        origin.applications.versions
-progenitor.gen.version:                 origin.applications.versions['gen']
-progenitor.g4_stage1.version:           origin.applications.versions['g4_stage1']
-progenitor.g4_stage2.version:           origin.applications.versions['g4_stage2']
-progenitor.detsim.version:              origin.applications.versions['detsim']
-progenitor.gen.config_file:             origin.applications.config_files['gen']
-progenitor.g4_stage1.config_file:       origin.applications.config_files['g4_stage1']
-progenitor.g4_stage2.config_file:       origin.applications.config_files['g4_stage2']
-progenitor.detsim.config_file:          origin.applications.config_files['detsim']
+progenitor.applications:
+    description: List of {name, version, config} dicts for origin apps, superseded by origin.applications.x
+    status: retired
+    special: origin_applications
+
+core.progenitor_application_names:
+    description: List of origin app names, superseded by origin.applications.names
+    status: retired
+    special: origin_applications
+progenitor.application_names:
+    description: List of origin app names, superseded by origin.applications.names
+    status: retired
+    special: origin_applications
+progenitor.applications.names:
+    description: List of origin app names, superseded by origin.applications.names
+    status: retired
+    special: origin_applications
+
+core.progenitor_application_versions:
+    description: List of origin app versions, superseded by origin.applications.versions
+    status: retired
+    special: origin_applications
+progenitor.application_versions:
+    description: List of origin app versions, superseded by origin.applications.versions
+    status: retired
+    special: origin_applications
+progenitor.applications.versions:
+    description: Dict of origin app versions, superseded by origin.applications.versions
+    status: retired
+    special: origin_applications
+progenitor.gen.version:
+    description: Origin gen version, superseded by origin.applications.versions['gen']
+    status: retired
+    special: origin_applications
+progenitor.g4_stage1.version:
+    description: Origin g4_stage1 version, superseded by origin.applications.versions['g4_stage1']
+    status: retired
+    special: origin_applications
+progenitor.g4_stage2.version:
+    description: Origin g4_stage2 version, superseded by origin.applications.versions['g4_stage2']
+    status: retired
+    special: origin_applications
+progenitor.detsim.version:
+    description: Origin detsim version, superseded by origin.applications.versions['detsim']
+    status: retired
+    special: origin_applications
+
+core.progenitor_config_files:
+    description: List of origin app configs, superseded by origin.applications.config_files
+    status: retired
+    special: origin_applications
+progenitor.config_files:
+    description: List of origin app configs, superseded by origin.applications.config_files
+    status: retired
+    special: origin_applications
+progenitor.applications.config_files:
+    description: Dict of origin app configs, superseded by origin.applications.config_files
+    status: retired
+    special: origin_applications
+progenitor.gen.config_file:
+    description: Origin gen config, superseded by origin.applications.config_files['gen']
+    status: retired
+    special: origin_applications
+progenitor.g4_stage1.config_file:
+    description: Origin g4_stage1 config, superseded by origin.applications.config_files['g4_stage1']
+    status: retired
+    special: origin_applications
+progenitor.g4_stage2.config_file:
+    description: Origin g4_stage2 config, superseded by origin.applications.config_files['g4_stage2']
+    status: retired
+    special: origin_applications
+progenitor.detsim.config_file:
+    description: Origin detsim config, superseded by origin.applications.config_files['detsim']
+    status: retired
+    special: origin_applications
 
 ##################################################
 #              Still in Use in 2026              #
