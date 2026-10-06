@@ -13,7 +13,6 @@
 # For each metadata key, we can define:
 # - description: A human-readable description of the key
 # - status: Whether the key is current, deprecated, or retired (default: current)
-# - replacement: The key that should be used instead, if applicable
 # - required: Condition under which the key is required (default: false)
 # - type: The data type (str, int, float, bool, list, dict, list[type], dict[key_type,val_type])
 # - merge: How to combine values from multiple files (sum, min, max, union, intersection)
@@ -40,6 +39,18 @@
 # - Retired values are not allowed by either checker
 
 ##################################################
+#                   Categories                   #
+##################################################
+
+CATEGORIES:
+    "core":
+        description: "Generally required metadata keys"
+    "dune":
+        description: "DUNE-specific metadata keys"
+    "dune_mc":
+        description: "DUNE Monte Carlo simulation metadata keys"
+
+##################################################
 #                   Conditions                   #
 ##################################################
 
@@ -52,11 +63,13 @@ CONDITIONS:
         or core.application.family is not None
         or core.application.name is not None
         or core.application.version is not None
-    "Monte Carlo": "core.file_type == 'mc'"
     "origin": >
         origin.applications.names is not None
         or origin.applications.versions is not None
         or origin.applications.config_files is not None
+    "Monte Carlo": 
+        expression: "core.file_type == 'mc'"
+        category:   "dune_mc"
 
 ##################################################
 #               Generally Required               #
@@ -255,13 +268,13 @@ core.run_type:
 core.runs:
     description: "List of run numbers contained in the file"
     required: true
-    type: list[int]
+    type: set[int]
     merge: union
 
 core.runs_subruns:
     description: "List of subruns in run*100000+subrun format"
     required: true
-    type: list[int]
+    type: set[int]
     merge: union
 
 retention.status:
@@ -308,7 +321,7 @@ core.end_time:
 
 core.events:
     description: "List of event numbers included (not useful for multi-run files)"
-    type: list[int]
+    type: set[int]
     merge: union
 
 core.first_event_number:
