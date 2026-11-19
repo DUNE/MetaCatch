@@ -4,8 +4,12 @@
 
 # This file attempts to define a standard DUNE metadata spec, based on:
 # 1. The DUNE DataCatalogDocs glossary: https://dune.github.io/DataCatalogDocs/glossary.html
-# 2. Old scripts from data-mgmt-ops: https://github.com/DUNE/data-mgmt-ops/tree/master/utilities
-# 3. Existing metadata values found by scanning the MetaCat database
+# 2. Old data-mgmt-ops scripts: https://github.com/DUNE/data-mgmt-ops/tree/master/utilities
+# 3. Existing metadata keys and values found by scanning the MetaCat database
+
+# The specification is not yet complete, and includes many undefined keys.
+# Many well-defined keys also still need human-readable descriptions for their valid options.
+# Any readers are encouraged to contribute updates to this specification!
 
 ################################################################################
 #                       MetaData Key And Category Naming                       #
@@ -172,9 +176,7 @@ CONDITIONS:
 
 # Any keys not listed in this file are considered invalid by default.
 
-################################################################################
-#                         Key Attribute Clarifications                         #
-################################################################################
+#------------------------ Key Attribute Clarifications ------------------------#
 
 # Key types are specified using the standard python type names:
 #   str, int, float, bool, list, set, dict
@@ -216,7 +218,7 @@ CONDITIONS:
 # - Retired values are omitted, and will raise an error like any other invalid value
 # - Retired keys have different behavior depending on whether the category is restricted:
 #     - Restricted:   Keys are omitted, and raise an error like any other invalid key
-#     - Unrestricted: Keys are given an empty list of values, and should raise an error if used
+#     - Unrestricted: Keys are given an empty list of values, which should raise an error if used
 
 ################################################################################
 #                              Generally Required                              #
@@ -870,7 +872,6 @@ dune_raw_data.timestamp:
 dune.production_status:
 dune_data.comment:
 dune_mc.neutrino_flavors:
-
 
 #---------------- Last Seen Before 2020 - Definitely Obsolete -----------------#
 
