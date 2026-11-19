@@ -1,0 +1,90 @@
+{
+    "checksums": {
+        "adler32": "a0bbe795"
+    },
+    "children": [],
+    "created_timestamp": 1713026843.32375,
+    "creator": "dunepro",
+    "fid": "liNgUbaDSXi4HO7W",
+    "metadata": {
+        "beam.momentum": 1.0,
+        "beam.polarity": 1,
+        "core.application": "art.reco",
+        "core.application.family": "art",
+        "core.application.name": "reco",
+        "core.application.version": "v09_85_00d00",
+        "core.data_stream": "out1",
+        "core.data_tier": "full-reconstructed",
+        "core.end_time": 1713021360.0,
+        "core.event_count": 10,
+        "core.file_format": "artroot",
+        "core.file_type": "mc",
+        "core.first_event_number": 911,
+        "core.group": "dune",
+        "core.last_event_number": 920,
+        "core.run_type": "hd-protodune",
+        "core.runs": [
+            192709
+        ],
+        "core.runs_subruns": [
+            19270900899
+        ],
+        "core.start_time": 1713019645.0,
+        "core.subruns": [
+            19270900899
+        ],
+        "dune.campaign": "pdhd_mc_2024a",
+        "dune.config_file": "standard_reco_protodunehd.fcl",
+        "dune.output_status": "confirmed",
+        "dune.requestid": "ritm1997595",
+        "dune.workflow": {
+            "cpuinfo": "AMD EPYC 7702P 64-Core Processor",
+            "hostname": "wn-da-05.gina.surfsara.nl",
+            "job_id": "192709.140@justin-prod-sched01.dune.hep.ac.uk",
+            "jobscript_cpu_seconds": 0,
+            "jobscript_finish": 1713026800,
+            "jobscript_real_seconds": 0,
+            "jobscript_start": 1713015436,
+            "os_release": "Scientific Linux release 7.9 (Nitrogen)",
+            "site_name": "NL_SURFsara",
+            "stage_id": 1,
+            "user": "calcuttj@fnal.gov",
+            "workflow_id": 1782
+        },
+        "dune_mc.detector_type": "hd-protodune",
+        "dune_mc.electron_lifetime": "35ms",
+        "dune_mc.gen_fcl_filename": "prod_beam_cosmics_1GeV_protodunehd.fcl",
+        "dune_mc.generators": "beam_cosmics",
+        "dune_mc.h4_input_file": "H4_v34b_1GeV_-27.7_10M_899.root",
+        "dune_mc.liquid_flow": "no",
+        "dune_mc.space_charge": "no",
+        "dune_mc.with_cosmics": 1,
+        "origin.applications.config_files": {
+            "detsim": "standard_detsim_protodunehd.fcl",
+            "g4_stage1": "standard_g4_protodunehd_stage1.fcl",
+            "g4_stage2": "standard_g4_protodunehd_stage2.fcl",
+            "gen": "prod_beam_cosmics_1GeV_protodunehd.fcl"
+        },
+        "origin.applications.names": [
+            "gen",
+            "g4_stage1",
+            "g4_stage2",
+            "detsim"
+        ],
+        "origin.applications.versions": {
+            "detsim": "v09_85_00d00",
+            "g4_stage1": "v09_85_00d00",
+            "g4_stage2": "v09_85_00d00",
+            "gen": "v09_85_00d00"
+        }
+    },
+    "name": "prod_beam_p1GeV_cosmics_protodunehd_20240413T133720Z_192709_063573_g4_stage1_g4_stage2_sce_off_detsim_reco.root",
+    "namespace": "hd-protodune",
+    "parents": [],
+    "retired": false,
+    "retired_by": null,
+    "retired_timestamp": null,
+    "size": 1999662040,
+    "updated_by": "dunepro",
+    "updated_timestamp": 1718718858.369349
+}

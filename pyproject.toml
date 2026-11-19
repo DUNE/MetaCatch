@@ -1,0 +1,46 @@
+[project]
+name = "MetaCatch"
+description = "Utility for catching errors in DUNE file metadata"
+readme = "README.md"
+authors = [
+  { name="Ethan Muldoon", email="muldoone@oregonstate.edu" },
+  { name="Heidi Schellman", email="heidi.schellman@oregonstate.edu" },
+]
+dependencies = [
+  "pyyaml",
+]
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Private :: Do Not Upload",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+standalone = [
+  "metacat-client",
+]
+test = ["pytest"]
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "metacat-client"
+]
+
+[project.urls]
+"Homepage" = "https://DUNE.github.io/MetaCatch"
+"Source Code" = "https://github.com/DUNE/MetaCatch"
+
+[project.scripts]
+metacatch = "metacatch.__main__:main"
+metacatch-sync = "metacatch.sync:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch]
+version.path = "src/metacatch/__init__.py"

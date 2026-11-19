@@ -1,0 +1,19 @@
+##################################################
+#               MetaCatch Settings               #
+##################################################
+
+# Metadata keys may only contain lower case letters, underscores, and periods.
+# MetaCatch will attempt to correct illegal keys by converting letters to lower case.
+# Other characters will be replaced with underscores, unless another substitution is specified:
+allowed_key_characters:
+    '.': '.,;:'
+
+edit_distance:
+    shift: 0.5 # Additional edit distance for shifted keys (in units of key widths)
+    ratio: 0.3 # Maximum fractional edit distance to match
+    limit: 9.0 # Maximum absolute edit distance to match
+    delta: 2.0 # Minimum edit distance difference to unambiguously select a better match
+    keyboard_layout: US_QWERTY # Keyboard layout to use for edit distance calculations
+
+misc:
+    allow_unknown_subcategories: true # Allow unknown subcategories in unrestricted categories

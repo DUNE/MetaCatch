@@ -1,0 +1,995 @@
+################################################################################
+#                         DUNE MetaData Specification                          #
+################################################################################
+
+# This file attempts to define a standard DUNE metadata spec, based on:
+# 1. The DUNE DataCatalogDocs glossary: https://dune.github.io/DataCatalogDocs/glossary.html
+# 2. Old scripts from data-mgmt-ops: https://github.com/DUNE/data-mgmt-ops/tree/master/utilities
+# 3. Existing metadata values found by scanning the MetaCat database
+
+################################################################################
+#                       MetaData Key And Category Naming                       #
+################################################################################
+
+# MetaCat stores file metadata as a dictionary of key, value pairs.
+# Keys must be strings, while the value type and constraints vary by key.
+# Keys are grouped into categories (and optionally into subcategories).
+# Categories are specified by including them in the key name separated by periods, for example
+#   "category.subcategory.parameter"
+# Note that subcategories and keys may share the same name, for example
+#   "core.application.name" is in the "core.application" category, but that is also a valid key.
+
+# The full list of requirements for key names is:
+# - Keys must be strings consisting of a series of segments delimited by periods
+# - Keys must contain at least one period (two segments, "category.parameter")
+# - Keys cannot begin or end with a period or contain consecutive periods (no empty segments)
+# - The first character of each segment must be a lowercase letter
+# - All other characters must be either lowercase letters, numbers, or underscores
+
+################################################################################
+#                             Category Definitions                             #
+################################################################################
+
+# Categories may have an associated description, and also 'required' or 'restricted' flags.
+# If a category is required, at least one key in that category must exist.
+# Categories will automatically be flagged as required if they contain any required keys.
+# If a category is restricted, only keys explicity defined in the spec are allowed.
+# Otherwise, users may freely add new keys in unrestricted categories.
+# MetaCatch will set required to false and restricted to true by default.
+# Note that this is different from MetaCat, which sets restricted to false by default!
+
+# The CATEGORIES dictionary below contains category definitions of the form:
+#   category_name:
+#       description:    string describing the category
+#       required:       boolean (default false)
+#       restricted:     boolean (default true)
+
+# Categories with default settings can also be defined by simply providing a description string:
+#   category_name:      description
+
+# Categories may also be defined separately, to keep them close to the related keys.
+# This is done by prefixing the category name with CATEGORY:
+#   CATEGORY category_name: description
+
+# Note that key definitions may impact their parent categories:
+# - Any missing category definitions will be created automatically with default settings
+# - Required keys will automatically flag all parent categories as required
+
+CATEGORIES:
+    ~: # Default behavior for all categories unless overridden
+        required:       false
+        restricted:     true
+    core:
+        description:    "Generally required metadata keys"
+        required:       true
+    dune:
+        description:    "DUNE-specific metadata keys"
+        required:       true
+    dune_mc:            "DUNE Monte Carlo simulation metadata keys"
+    merge:              "Keys used for merge jobs"
+
+################################################################################
+#                             Condition Definitions                            #
+################################################################################
+
+# Most keys are optional, while others are standard requirements for all files.
+# However, some keys may be required for some types of files but not for others.
+# MetaCatch therefore includes a set of conditions that can trigger additional required keys.
+# Conditions may use one or both of the following approaches:
+
+# Expression-based conditions evaluate an arbitrary boolean expression, provided as a string.
+# Expressions may use any metadata key or file property (name, namespace, ...) as a variable.
+# Expressions use standard python syntax, and most read-only operations are supported.
+# A subset of standard functions and operators are also available (len, sum, dict.keys, ...).
+# Missing keys evaluate to None, and conditions with evaluation errors will be treated as False.
+# Note that these conditions are ignored by MetaCat's server-side metadata validation!
+
+# Category-based conditions are simpler, and evalue to True if any key in the category exists.
+# This mirrors the server-side validation behavior for required keys in optional categories.
+# The server-side validation should apply these conditions to keys in the given category.
+# Note that the server-side validation ignores these conditions for keys outside the category!
+
+# The CONDITIONS dictionary below contains condition definitions of the form:
+#   condition_name:
+#       expression:   string containing a boolean expression
+#       category:     string containing a category name
+
+# Expression-based conditions may also be defined by simply providing the expression string:
+#   condition_name:      expression
+
+# As with categories, conditions may also be defined separately by prefixing them with CONDITION:
+#   CONDITION condition_name: expression
+
+# Condition names should be descriptive, and will be inserted into error messages as:
+#   "ERROR:     Missing key '{key_name}' is required for {condition_name} files"
+
+CONDITIONS:
+    "CAF": "core.data_tier == 'caf'"
+    "raw": "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
+    "root-tuple": "core.data_tier in ['root-tuple', 'root-tuple-virtual']"
+    "application output":
+        expression: "core.application is not None"
+        category:   "core.application"
+    "origin":
+        category:   "origin.applications"
+    "Monte Carlo": 
+        expression: "core.file_type == 'mc'"
+        category:   "dune_mc"
+
+################################################################################
+#                               Key Definitions                                #
+################################################################################
+
+# Metadata keys are defined by providing a dictionary using the full key name.
+# All keys accept the following standard attributes:
+#   category.key_name:
+#       description:    string describing the key
+#       required:       boolean or condition name (default: False)
+#       status:         current, deprecated, or retired (default: current)
+#       type:           type of the value, see below (default: any)
+#       merge:          merging behavior for multiple files, see below (default: strict)
+#       default:        default value for missing required keys (default: None)
+#       fixes:          mapping of incorrect values to corrected values
+#       checks:         list of additional checks, see below
+
+# Keys that are logically boolean are often stored as integers (1, 0) or strings ("yes", "no").
+# To support this, boolean keys accept an additional attribute:
+#   category.boolean_key:
+#       values:         list of values used to represent true and false (default: [True, False])
+# The values list must contain exactly two elements:
+# - One truthy value (True, 1, "true", "t", "yes", "y", "on")
+# - One falsy value (False, 0, "false", "f", "no", "n", "off")
+
+# Many keys are restricted to a small set of specific allowed options.
+# These keys may use three additional attributes:
+#   category.key_with_options:
+#       options:        mapping of allowed values to human-readable descriptions
+#       old_options:    mapping of deprecated values to human-readable descriptions
+#       bad_options:    mapping of retired values to human-readable descriptions
+# Keys must have at least one valid option, otherwise the key itself should be deprecated/retired.
+# Option descriptions may be empty, but should be provided if possible.
+# Descriptions for deprecated and retired options should explain why they are no longer allowed.
+# Retired values with direct replacements should use the fixes attribute instead of bad_options!
+
+# Alternatively, numeric and string keys may be be restricted to a range or specific pattern.
+# These keys may use three additional attributes:
+#   category.parametric_key:
+#       min:            minimum allowed value (numeric or string)
+#       max:            maximum allowed value (numeric or string)
+#       pattern:        regular expression (string values only)
+# Keys may use any or all of these attributes, but they cannot be combined with explicit options.
+# The pattern string is evaluated using standard regex syntax.
+
+# Invalid and retired keys with direct replacements should not provide a specification.
+# Instead, these keys should simply map directly to the correct key:
+#   category.retired_key:   new_category.replacement_key
+#   Malformed-Key:          fixed_category.fixed_key
+
+# There are also many keys in the database but are not yet defined in this specification.
+# These keys are included in this file, but with an empty specification.
+# They are assumed to be valid but deprecated by default.
+#   category.unknown_key:   # Empty spec, defaults to deprecated
+
+# Any keys not listed in this file are considered invalid by default.
+
+################################################################################
+#                         Key Attribute Clarifications                         #
+################################################################################
+
+# Key types are specified using the standard python type names:
+#   str, int, float, bool, list, set, dict
+# List, set, and dict keys may specify a value type, and dicts may also specify a key type:
+#   list[val_type], set[val_type], dict[val_type], dict[key_type, val_type]
+# Sets are not JSON-serializable, and are stored as sorted lists.
+# Note that this differs from the MetaCat server type syntax, which uses the following type names:
+#   text, int, float, boolean, list, dict, text[], int[], float[], boolean[], any
+
+# MetaCatch supports merging metadata from multiple files, using the specified mode for each key.
+# All keys support the following merge modes:
+#   strict:     All values must be identical, otherwise an error is raised (default)
+#   equal:      Keep the key if there is a single unique value, otherwise delete it
+#   delete:     Delete the key from the merged metadata
+# Additional merge modes are available depending on the key type:
+#   bool:       any, all
+#   numeric:    sum, min, max
+#   str:        append, sorted (sorts and deduplicates values before joining)
+#   list:       append
+#   set, dict:  union, intersect
+# The string merge methods accept an optional argument to specify the join string, for example:
+#   sorted(, ): Sorts and deduplicates values, then joins them with ', ' as the separator
+# The dict merge methods delete dict keys with conflicting values, for union this throws an error.
+
+# The checks attribute allows more complex cross-key validation rules to be specified.
+# It consists of a list of boolean expression strings, similar to condition expressions.
+# As before, expressions may refer to any metadata key or file property as a variable.
+# Check expressions may also use 'self' as a shorthand to refer to the key in question.
+# Checks are only evaluated for keys that exist, and are ignored for missing keys.
+# However, any missing required keys will be added first so their checks will also be evaluated.
+
+# Note that deprecated and retired designations only apply to MetaCatch, not to MetaCat.
+# Using MetaCatch for client-side validation, the behavior is as follows:
+# - Deprecated keys/values are valid but will cause a warning to be issued
+# - Retired values are invalid, and MetaCatch will reccomend the key's default value if available
+# - Retired keys are invalid, and MetaCatch will reccomend deleting them
+# The MetaCat server-side validation instead uses the following behavior:
+# - Deprecated keys/values are treated as completely valid and will not cause any warning
+# - Retired values are omitted, and will raise an error like any other invalid value
+# - Retired keys have different behavior depending on whether the category is restricted:
+#     - Restricted:   Keys are omitted, and raise an error like any other invalid key
+#     - Unrestricted: Keys are given an empty list of values, and should raise an error if used
+
+################################################################################
+#                              Generally Required                              #
+################################################################################
+
+core.data_stream:
+    description: "Type of data taking"
+    required: true
+    type: str
+    options:
+        "beam":
+        "noise":
+        "cosmics":
+        "calibration":
+        "physics":
+        "commissioning":
+        "pedestal":
+        "trigprim":
+        "g4beamline":
+        "neutrino":
+        "antineutrino":
+        "simulation":
+        "source":
+        "laser":
+        "hvramp":
+        "test":
+        "test_hv_ramp":
+        "test_hv_ramp_above_nominal":
+        "test_hv_ramp_down":
+        "test_no_hv":
+        "test_pump":
+        "test_flourine18_source":
+        "test_reduced_top_flow":
+        "test_scans":
+        "pdstl":                    "Minerva pedestal"
+        "linjc":                    "Minerva light injection"
+        "numib":                    "Minerva numi beam"
+        "numip":                    "Minerva numi beam with interspersed pedestal data"
+        "numil":                    "Minerva numi beam with interspersed light injection data"
+    old_options:
+        "out1":
+        "out2":
+        "study":
+    bad_options:
+        "None":
+    fixes:
+        "Test":                     "test"
+        "tests":                    "test"
+        "Cosmics":                  "cosmics"
+        "cosmic":                   "cosmics"
+        "numibeam":                 "numib"
+        "comissioning":             "commissioning"
+
+core.data_tier:
+    description: "Step in data processing sequence"
+    required: true
+    type: str
+    options:
+        "raw":
+        "binary-raw":
+        "decoded-raw":
+        "packet-raw":
+        "hit-reconstructed":
+        "full-reconstructed":
+        "dst-reconstructed":
+        "generated":
+        "simulated":
+        "detector-simulated":
+        "detsim":
+        "edep-sim":
+        "root-hist":
+        "root-tuple":
+        "root-tuple-virtual":
+        "pandora-info":
+        "pandora-reconstruction":
+        "reco-recalibrated":
+        "trigprim":
+        "sliced":
+        "flow":
+        "flow-calibration":
+        "caf":
+        "caf-analysis":
+        "genie":
+        "genie-event-generator":
+        "genie-spill-build-rock-overlay":
+        "reco_pandora":
+        "reco_spine":
+        "spill-builder-full":
+        "spill-builder-overlay":
+        "spill-builder-singles":
+        "convert2h5-full":
+        "convert2h5-overlay":
+        "convert2h5-singles":
+        "hadd":
+        "hadd-rock":
+        "physics-ntuple":
+        "tms-reco-full":
+        "tms-reco-readout-full":
+    old_options:
+        "test":
+        "stage1":
+        "stage2":
+        "sam-user":
+        "dc1input":
+        "caf-flat":                 "Flat caf files (use core.format_variant instead)"
+        "caf-flat-analysis":        "Flat caf analysis files (use core.format_variant instead)"
+    fixes:
+        "pandora_info":             "pandora-info"
+        "trigger-primitives":       "trigprim"
+
+core.event_count:
+    description: "Number of events contained in the file"
+    required: true
+    type: int
+    merge: sum
+    min: 0
+
+core.file_content_status:
+    description: "Status of the file"
+    required: true
+    type: str
+    default: "good"
+    options:
+        "good":
+        "recovered":
+        "bad":
+
+core.file_format:
+    description: "Format of the data"
+    required: true
+    type: str
+    options:
+        "root":
+        "artroot":
+        "binary":
+        "rootntuple":
+        "hdf5":
+        "tar":
+    old_options:
+        "unknown":
+    fixes:
+        "tfile": "root"
+
+core.format_variant:
+    description: "Variant of the data format"
+    required: CAF
+    type: str
+    default: "caf"
+    options:
+        "caf": "Normal caf format"
+        "flat": "flatcaf format"
+
+core.file_type:
+    description: "Flag distinguishing between real and simulated data"
+    required: true
+    type: str
+    options:
+        "mc":                       "Monte Carlo simulated data"
+        "detector":                 "Real detector data"
+    old_options:
+        "importedDetector":         "Minerva imported detector data"
+        "unknown":
+        "test-data":
+        "binary":
+        "photon_detector":
+        "test":
+        "dc1simdaq":
+    fixes:
+        "data":                     "detector"
+        "montecarlo":               "mc"
+
+core.run_type:
+    description: "Detector that produced the data"
+    required: true
+    type: str
+    options:
+        "test":
+        "protodune-sp":                     "ProtoDUNE Single Phase"
+        "protodune-dp":                     "ProtoDUNE Dual Phase"
+        "iceberg":
+        "np04_vst":
+        "hd-coldbox":
+        "vd-coldbox":
+        "vd-coldbox-bottom":
+        "vd-coldbox-top":
+        "vd-coldbox-pixels":
+        "hd-protodune":                     "ProtoDUNE Horizontal Drift"
+        "vd-protodune":                     "ProtoDUNE Vertical Drift"
+        "vd-protodune-pds":
+        "vd-protodune-top":
+        "dc4-vd-coldbox-bottom":
+        "dc4-vd-coldbox-top":
+        "dc4-hd-protodune":
+        "dc25-vd-protodune":
+        "neardet":                          "Near Detector"
+        "neardet-lar":
+        "neardet-lar-genie":
+        "neardet-lar-genie-rootracker":
+        "neardet-lar-tms-sand":
+        "neardet-fsd-lar-charge":
+        "neardet-fsd-lar-light":
+        "neardet-fsd-lar-charge-light":
+        "neardet-2x2":
+        "neardet-2x2-lar":
+        "neardet-2x2-lar-caf":
+        "neardet-2x2-lar-caf-flat":
+        "neardet-2x2-lar-charge":
+        "neardet-2x2-lar-light":
+        "neardet-2x2-lar-charge-light":
+        "neardet-2x2-lar-genie":
+        "neardet-2x2-lar-genie-ghep":
+        "neardet-2x2-lar-genie-gtrac":
+        "neardet-2x2-lar-genie-rootracker":
+        "neardet-2x2-lar-reco":
+        "neardet-2x2-minerva":
+        "fardet":                           "Far Detector"
+        "fardet-sp":                        "Far Detector Single Phase"
+        "fardet-hd":                        "Far Detector Horizontal Drift"
+        "fardet-vd":                        "Far Detector Vertical Drift"
+        "311":
+        "311_dp_light":
+    old_options:
+        "physics":
+        "ehn1-beam-np02":
+        "ehn1-beam-np04":
+        "lbnf_beam":
+        "justin-tutorial":                  "JustIn tutorial data"
+    fixes:
+        "protodune-hd":                     "hd-protodune"
+    checks: ["self == namespace"]
+
+core.runs:
+    description: "List of run numbers contained in the file"
+    required: true
+    type: set[int]
+    merge: union
+
+core.runs_subruns:
+    description: "List of subruns in run*100000+subrun format"
+    required: true
+    type: set[int]
+    merge: union
+
+retention.status:
+    description: "Flag to tell if the file is being used and should be retained"
+    required: true
+    type: str
+    default: "active"
+    options:
+        "active":  "Permanent file that should be retained"
+        "virtual": "Temporary intermediate files"
+
+retention.class:
+    description: "Flag used to determine retention status"
+    required: true
+    type: str
+    default: "unknown"
+    options:
+        "unknown":
+        "physics":
+        "simulation":
+        "rawdata":
+        "commissioning":
+        "test":
+        "user":
+    old_options:
+        "other":
+        "study":
+
+################################################################################
+#                             Optional but Useful                              #
+################################################################################
+
+core.start_time:
+    description: "Unix UTC time at which the process that created the file started"
+    type: float
+    merge: min
+
+core.end_time:
+    description: "Unix UTC time at which the process that created the file ended"
+    type: float
+    merge: max
+
+core.events:
+    description: "List of event numbers included (not useful for multi-run files)"
+    type: set[int]
+    merge: union
+
+core.first_event_number:
+    description: "First event number in the file"
+    required: raw
+    type: int
+    merge: min
+    min: 0
+
+core.last_event_number:
+    description: "Last event number in the file"
+    required: raw
+    type: int
+    merge: max
+
+################################################################################
+#                         Simulation & Reconstruction                          #
+################################################################################
+
+dune.campaign:
+    description: "Name of a large-scale production activity"
+    type: str
+
+dune.requestid:
+    description: "The formal request id for the campaign in the system"
+    type: str
+
+dune.config_file:
+    description: "The top level configuration used to produce the file"
+    required: root-tuple
+    type: str
+    pattern: '.*\..*'
+
+dune.workflow:
+    description: "Dictionary of workflow information produced by the JustIn system"
+    type: dict
+    merge: intersect
+
+dune.output_status:
+    description: "Whether the output file was successfully added to the system"
+    type: str
+    merge: delete
+    default: "confirmed"
+    options:
+        "confirmed":
+    old_options:
+        "recorded":
+        "uploaded":
+        "good":
+        "merged":
+
+core.application:
+    description: "Full name of the application, formatted as 'family.name'"
+    required: application output
+    type: str
+    checks: ["self == core.application.family + '.' + core.application.name"]
+
+core.application.family:
+    description: "Broad category of the application that produced the file"
+    required: application output
+    type: str
+
+core.application.name:
+    description: "Name of the specific application that produced the file"
+    required: application output
+    type: str
+
+core.application_version:       core.application.version
+core.application.version:
+    description: "Version of the application that produced the file"
+    required: application output
+    type: str
+
+origin.applications.names:
+    description: "Ordered list of application names that have processed the file"
+    required: origin
+    type: list[str]
+
+origin.applications.versions:
+    description: "Mapping from application names to associated DUNESW version"
+    required: origin
+    type: dict[str, str]
+    checks: ["self.keys() == set(origin.applications.names)"]
+
+origin.applications.config_files:
+    description: "Mapping from application names to associated configuration file"
+    required: origin
+    type: dict[str, str]
+    checks: ["self.keys() == set(origin.applications.names)"]
+
+################################################################################
+#                             Monte Carlo - General                            #
+################################################################################
+
+core.group:
+    description: "Name of the physics group that produced the file"
+    type: str
+    options:
+        "dune":                     "Deep Underground Neutrino Experiment"
+        "dunepro":                  "DUNE Production"
+    old_options:
+        "lbne":                     "Long Baseline Neutrino Experiment"
+        "minerva":                  "Minerva Experiment"
+
+dune_mc.gen_fcl_file:           dune_mc.gen_fcl_filename
+dune.mc.gen_fcl_filename:       dune_mc.gen_fcl_filename
+dune_mc.gen_fcl_filename:
+    description: "Generator fcl file used to produce the simulation"
+    #required: Monte Carlo
+    type: str
+    pattern: '.*\.fcl'
+
+dune_mc.detsyst_fcl_filename:
+
+dune_mc.geometry_version:
+    description: "Geometry version used to produce the simulation"
+    required: Monte Carlo
+    type: str
+
+dune_mc.generators:
+    description: "Generators used to produce the simulation"
+    type: str
+
+################################################################################
+#                    Monte Carlo - ProtoDune / Far Detector                    #
+################################################################################
+
+dune_mc.electron_lifetime:
+    description: "Electron lifetime used in the simulation (e.g. '35ms')"
+    type: str
+
+mc.liquid_flow:     dune_mc.liquid_flow
+dune_mc.liquid_flow:
+    description: "Whether liquid flow is simulated"
+    type: bool
+    values: ["yes", "no"]
+
+mc.space_charge:    dune_mc.space_charge
+dune_mc.space_charge:
+    description: "Whether space charge effects are simulated"
+    type: bool
+    values: ["yes", "no"]
+
+mc.with_cosmics:    dune_mc.with_cosmics
+dune_mc.with_cosmics:
+    description: "Whether cosmic rays are included in the simulation"
+    type: bool
+    values: [0, 1]
+
+beam.momentum:
+    description: "Beam momentum in GeV/c"
+    type: float
+
+beam.polarity:
+    description: "Beam polarity"
+    type: int
+    options:
+        1:      "Neutrino mode"
+        -1:     "Antineutrino mode"
+
+################################################################################
+#                                   Merging                                    #
+################################################################################
+
+merge.method:
+    description: "Name of the merging method used"
+    type: str
+
+merge.cmd:
+    description: "Command used to merge files"
+    type: str
+
+merge.script:
+    description: "Runner script used to perform the merge"
+    type: str
+
+merge.cfg:
+    description: "Configuration file for merging runner script"
+    type: str
+
+merge.query:
+    description: "MetaCat query used to select files for merging"
+    type: str
+
+merge.dataset:
+    description: "Name of the dataset being merged"
+    type: str
+
+merge.tag:
+    description: "Tag to identify the merge job"
+    type: str
+
+merge.comment:
+    description: "Comment describing the merge job"
+    type: str
+
+merge.skip:
+    description: "Number of files skipped during merging"
+    type: int
+
+merge.limit:
+    description: "Maximum number of input files to merge"
+    type: int
+
+merge.chunk:
+    description: "Chunk number for this file (if splitting a large merge)"
+    type: int
+
+merge.pass:
+    description: "Pass number for multi-stage merges"
+    type: int
+
+merge.final:
+    description: "Whether this is the final output of a merge (vs an intermediate file)"
+    type: bool
+
+merge.timestamp:
+    description: "Timestamp when the merge was performed"
+    type: str
+
+merge.version:
+    description: "Version of the merging software used"
+    type: str
+
+merge.hash:
+    description: "Hash of input files used to identify merge jobs, superseded by merge.tag"
+    status: retired
+    type: str
+
+################################################################################
+#                                Miscellaneous                                 #
+################################################################################
+
+dune.daq_test:
+    type: bool
+
+################################################################################
+#                            Missing Specification                             #
+################################################################################
+
+#----------------- Still in Use in 2026 - Definitely Current ------------------#
+
+art.file_format_era:
+art.file_format_version:
+art.first_event:
+art.last_event:
+art.process_name:
+art.run_type:
+core.subruns:
+dune.dataset_name:
+dune.dqc_quality:
+dune.lrs_active_config:
+dune.lrs_active_thresholds:
+dune_mc.detector_type:
+dune_mc.genie_tune:
+dune_mc.name:
+dune_mc.nu:
+dune_mc.rawdigits:
+dune_mc.rock:
+dune_mc.topvolume:                  dune_mc.top_volume
+dune_mc.top_volume:
+dune.user:
+dune.wobconf:
+
+#------------------- Last Seen in 2025 - Probably Current? --------------------#
+
+core.lum_block_ranges:
+core.wobconf:
+dune.fcl_name:
+dune.fcl_version_tag:
+dune.merging_range:
+dune.merging_stage:
+dune.mx2x2_global_subrun_numbers:
+dune.ndlar_charge_subrun_numbers:
+dune.ndlar_light_subrun_numbers:
+dune_data.accouple:
+dune_data.calibpulsemode:
+dune_data.daqconfigname:
+dune_data.detector_config:
+dune_data.febaselinehigh:
+dune_data.fegain:
+dune_data.feleak10x:
+dune_data.feleakhigh:
+dune_data.feshapingtime:
+dune_data.inconsistent_hw_config:
+dune_data.is_fake_data:
+dune_mc.beam_dataset:
+dune_mc.momentum:
+dune_mc.momentum_polarity:
+file.category:
+file.creator:
+file.created_timestamp:
+file.gdml:
+file.nu:
+file.pot:
+file.rock:
+file.fireworks4dune.version:
+file.nd_production.version:
+file.gen_location:
+file.processing.status:
+
+#--------------------- Last Seen in 2024 - Status Unclear ---------------------#
+
+core.campaign:
+core.parents:
+dune.fcl_path:
+dune_mc.h4_input_file:
+dune_mc.h4_input_iteration:
+dune_mc.beam_energy:
+info.cpusec:
+info.memory:
+info.wallsec:
+info.physicsgroup:
+online.triggertype:
+online.triggerconfig:
+misc.file_partition:
+x.end_time:
+x.start_time:
+x.content_status:
+
+#--------------------- Last Seen in 2023 - Maybe Obsolete? --------------------#
+
+core.process_id:
+core.end_time_utc_text:
+core.start_time_utc_text:
+dataset.tag:
+dune.datataking:
+dune.generators:
+dune_data.detector_config.object:
+dune_mc.mixerconfig:
+dune_mc.beam_flux_id:
+dune_mc.beam_polarity:
+dune_mc.generators_version:
+lbnf_mc.horncurrent:
+misc.parents:
+origin.worker_id:
+x.user:
+x.group:
+x.application:
+x.checksum:
+
+#------------------- Last Seen in 2022 - Possibly Obsolete? -------------------#
+
+art.variation:
+detector.hv_value:
+data_quality.online_good_run_list:
+dune_data.calibpulsedac:
+
+#-------------------- Last Seen in 2021 - Likely Obsolete? --------------------#
+
+artdaq.version:
+artdaq.timestamp:
+
+# These 6 originally had dashes instead of underscores, which is a syntax error in MetaCat
+# I cannot explicitly query them, but they seem to apear alongside artdaq.version
+artdaq_core.version:
+artdaq_core.timestamp:
+dune_artdaq.version:
+dune_artdaq.timestamp:
+dune_raw_data.version:
+dune_raw_data.timestamp:
+
+#------------------- Last Seen in 2020 - Probably Obsolete? -------------------#
+
+dune.production_status:
+dune_data.comment:
+dune_mc.neutrino_flavors:
+
+
+#---------------- Last Seen Before 2020 - Definitely Obsolete -----------------#
+
+custom.field:
+daq.felix_status:
+daq.readout:
+data_quality.do_not_process:
+data_quality.is_junk:
+detector.crt_status:
+detector.hv_status:
+detector.pd_status:
+detector.tpc_status:
+dune_data.detector_type:
+dune.dc2_production_status:
+dune_mc.miscellaneous:
+dune.poms_campaign_id:
+lbne_data.detector_type.object:
+lbne_data.name:
+lbne_data.run_mode:
+lbne_mc.production_campaign:
+online.category:
+online.daq_config:
+online.daq_host:
+online.run:
+online.runnumber:
+online.subrun:
+online.timestamp:
+
+# This key was originally 'file.2x2_sim.version', which is a syntax error in MetaCat
+# I cannot query it and haven't seen it used, so I don't know how old it is but it seems uncommon
+file.sim_2x2.version:
+
+################################################################################
+#                             Known Obsolete Keys                              #
+################################################################################
+
+################################################################################
+#                      Prototypes of origin.applications                       #
+################################################################################
+
+progenitor.applications:
+    description: "List of {name, version, config} dicts for origin apps, superseded by origin.applications.x"
+    status: retired
+
+core.progenitor_application_names:
+    description: "List of origin app names, superseded by origin.applications.names"
+    status: retired
+progenitor.application_names:
+    description: "List of origin app names, superseded by origin.applications.names"
+    status: retired
+progenitor.applications.names:
+    description: "List of origin app names, superseded by origin.applications.names"
+    status: retired
+
+core.progenitor_application_versions:
+    description: "List of origin app versions, superseded by origin.applications.versions"
+    status: retired
+progenitor.application_versions:
+    description: "List of origin app versions, superseded by origin.applications.versions"
+    status: retired
+progenitor.applications.versions:
+    description: "Dict of origin app versions, superseded by origin.applications.versions"
+    status: retired
+progenitor.gen.version:
+    description: "Origin gen version, superseded by origin.applications.versions['gen']"
+    status: retired
+progenitor.g4_stage1.version:
+    description: "Origin g4_stage1 version, superseded by origin.applications.versions['g4_stage1']"
+    status: retired
+progenitor.g4_stage2.version:
+    description: "Origin g4_stage2 version, superseded by origin.applications.versions['g4_stage2']"
+    status: retired
+progenitor.detsim.version:
+    description: "Origin detsim version, superseded by origin.applications.versions['detsim']"
+    status: retired
+
+core.progenitor_config_files:
+    description: "List of origin app configs, superseded by origin.applications.config_files"
+    status: retired
+progenitor.config_files:
+    description: "List of origin app configs, superseded by origin.applications.config_files"
+    status: retired
+progenitor.applications.config_files:
+    description: "Dict of origin app configs, superseded by origin.applications.config_files"
+    status: retired
+progenitor.gen.config_file:
+    description: "Origin gen config, superseded by origin.applications.config_files['gen']"
+    status: retired
+progenitor.g4_stage1.config_file:
+    description: "Origin g4_stage1 config, superseded by origin.applications.config_files['g4_stage1']"
+    status: retired
+progenitor.g4_stage2.config_file:
+    description: "Origin g4_stage2 config, superseded by origin.applications.config_files['g4_stage2']"
+    status: retired
+progenitor.detsim.config_file:
+    description: "Origin detsim config, superseded by origin.applications.config_files['detsim']"
+    status: retired
+
+################################################################################
+#                    LBNE Keys With Direct DUNE Equivalents                    #
+################################################################################
+
+lbne_data.detector_type:    dune_data.detector_type
+lbne_mc.beam_flux_id:       dune_mc.beam_flux_id
+lbne_mc.detector_type:      dune_mc.detector_type
+lbne_mc.generators:         dune_mc.generators
+lbne_mc.geometry_version:   dune_mc.geometry_version
+lbne_mc.miscellaneous:      dune_mc.miscellaneous
+lbne_mc.name:               dune_mc.name
+lbne_mc.neutrino_flavors:   dune_mc.neutrino_flavors
+
+################################################################################
+#                                 Illegal Keys                                 #
+################################################################################
+
+artdaq-core.version:        artdaq_core.version
+artdaq-core.timestamp:      artdaq_core.timestamp
+dune-artdaq.version:        dune_artdaq.version
+dune-artdaq.timestamp:      dune_artdaq.timestamp
+dune-raw-data.version:      dune_raw_data.version
+dune-raw-data.timestamp:    dune_raw_data.timestamp
+file.2x2_sim.version:       file.sim_2x2.version
