@@ -1,17 +1,15 @@
 # MetaCatch
 Utilities for catching errors in DUNE metadata
 
-I will be copying over my metadata error checking code from Merge-Utils, and then expanding this to be a more general metadata checking tool.  We might also try to roll in some scripts for generating metadata later.
+MetaCatch includes a fairly comprehensive metadata specification, defined here:
+[config/specification.yaml](https://github.com/DUNE/MetaCatch/blob/main/src/metacatch/config/specification.yaml)
 
-To begin with, I would like some input on the metadata specification defined in [config/keys.yaml](https://github.com/DUNE/MetaCatch/blob/main/config/keys.yaml).  Thanks to Marc Mengel we have a full list of MetaCat keys, but I still need help with:
-  - Identifying obsolete keys and mapping them to appropriate replacements (if any)
+However, the specification is far from complete, and we could use help fleshing it out:
+  - Adding definitions for keys that are currently missing them
   - Adding human-readable descriptions for keys and options
-  - Reviewing my preliminary categorization of good options, deprecated options, and fixes for invalid options
-  - Defining the conditions under which various keys are required in the metadata (e.g. "core.file_type == 'mc'")
-
-In the Merge-Utils error checking any unrecognized keys were treated as valid, but if we can put together a reasonably comprehensive specification I'd like to change it to warn about unknown keys instead.  Presumably the server-side validation would accept things like unknown keys or options I've marked as deprecated, but I think it will be better for this client-side checker to be more strict and give warnings about anything that seems irregular.  Users can always ignore the warnings if they're sure they know better, but that way they'll at least stop and check that they didn't make a typo or something.
-
-Something else to consider is whether we should have cross-checks between different keys.  Steven Timm mentioned comparing core.run_type with the namespace, and there are other combinations that are obviously incorrect such as core.data_tier = raw combined with core.file_format = artroot.  I could see this getting pretty complicated so it won't be in the first version, but it might be something to add down the line.
+  - Flagging deprecated and retired keys and mapping them to appropriate replacements (if any)
+  - Reviewing the preliminary categorization of valid, deprecated, and retired options for various keys
+  - Reviewing add adding to the system for conditional key requirements and value cross-checks
 
 Copyright © 2025 FERMI NATIONAL ACCELERATOR LABORATORY
 
