@@ -6,88 +6,92 @@ from metacatch import specification, config
 from metacatch.config import ValidationError as VE
 from metacatch.config import ErrorSeverity as ES
 
-USR_ERRORS = {
-    ES.ERROR: [
-        (VE.USR_DELETED,    "Key {k} val {v} should be deleted by user override"),
-        (VE.USR_OVERRIDE,   "Key {k} val {vi} should be set to user override {vf}"),
-        (VE.USR_DEFAULT,    "Missing key {k} should be set to user default value {vf}"),
-    ],
-    ES.FIX: [
-        (VE.USR_DELETED,    "Deleted key {k} val {v} by user override"),
-        (VE.USR_OVERRIDE,   "Set key {k} val {vi} to user override {vf}"),
-        (VE.USR_DEFAULT,    "Set missing key {k} to user default value {vf}"),
-    ],
-    None: (VE.USR_ERRORS,   "Key {k} val {v} is {e}"),
-}
+class Formatter:
+    """Class to format output messages for a metadata key"""
 
-KEY_ERRORS = {
-    ES.CRITICAL: [
-        (VE.KEY_REQUIRED | VE.USR_DELETED, "Deleted key {k} is required for {c} files!"),
-        (VE.KEY_REQUIRED,   "Missing key {k} is required for {c} files!"),
-        (VE.KEY_ILLEGAL,    "Key {ki} is malformed, {o}"),
-        (VE.KEY_INVALID,    "Key {ki} is invalid, {o}"),
-    ],
-    ES.ERROR: [
-        (VE.KEY_REQUIRED,   "Missing key {k} required for {c} files (default value {v})"),
-        (VE.KEY_CONFLICT,   "Key {ki} val {vi} conflicts with replacement key {kf} val {vf}"),
-        (VE.KEY_REDUNDANT,  "Key {ki} is redundant with replacement key {kf}"),
-        (VE.KEY_ILLEGAL,    "Key {ki} is malformed, {o}"),
-        (VE.KEY_RETIRED,    "Key {k} is retired"),
-        (VE.KEY_REPLACED,   "Key {ki} is retired, use {kf} instead"),
-        (VE.KEY_INVALID,    "Key {ki} is invalid, {o}"),
-        (VE.KEY_UNKNOWN,    "Key {ki} is unknown, {o}"),
-    ],
-    ES.FIX: [
-        (VE.KEY_REQUIRED,   "Set missing key {k} to default value {v} (required for {c} files)"),
-        (VE.KEY_CONFLICT,   "Ignored redundant key {ki} in favor of {kf} with value {vf}"),
-        (VE.KEY_REDUNDANT,  "Ignored redundant key {ki} in favor of {kf}"),
-        (VE.KEY_ILLEGAL,    "Replaced malformed key {ki} -> {kf}"),
-        (VE.KEY_RETIRED,    "Deleted retired key {k}"),
-        (VE.KEY_REPLACED,   "Replaced retired key {ki} -> {kf}"),
-        (VE.KEY_INVALID,    "Replaced invalid key {ki} -> {kf}"),
-    ],
-    ES.WARNING: [
-        (VE.KEY_DEPRECATED, "Key {k} is deprecated"),
-        (VE.KEY_UNKNOWN,    "Key {k} is unknown, are you sure it is correct?"),
-    ],
-    ES.INFO: [
-        (VE.KEY_DESC,       "Key {k} is valid, but has no description"),
-    ],
-    None: (VE.KEY_ERRORS,   "Key {ki} is {e}, {o}"),
-}
+    # Basic formatters for key and value fields
+    formatters = {
+        # Key formatters
+        "ki":   lambda k: repr(k.orig_key),
+        "kf":   lambda k: repr(k.name),
+        "k":    lambda k: k.name_str,
+        "ko":   lambda k: Formatter.options(k.names),
+        "kd":   lambda k: k.spec.description or "no description",
+        "ke":   lambda k: (k.errors & VE.KEY_ERRORS).name or "GOOD",
+        # Value formatters
+        "vi":   lambda k: Formatter.value(k.orig_val),
+        "vf":   lambda k: Formatter.value(k.value),
+        "v":    lambda k: k.val_str,
+        "vo":   lambda k: Formatter.options(k.vals),
+        "vd":   lambda k: k.spec.describe(k.value) or "no description",
+        "ve":   lambda k: (k.errors & VE.VAL_ERRORS).name or "GOOD",
+        # Other formatters
+        "t":    lambda k: str(k.spec.type),
+        "ue":   lambda k: (k.errors & VE.USR_ERRORS).name or "GOOD",
+        "e":    lambda k: (k.errors.name or "GOOD"),
+        "c":    lambda k: k.spec.condition_name,
+    }
 
-VAL_ERRORS = {
-    ES.CRITICAL: [
-        (VE.VAL_INVALID,    "Key {k} val {vi} is invalid, {o}"),
-        (VE.VAL_TYPE,       "Key {k} val {vi} is the wrong type, expected {t}"),
-        (VE.VAL_RETIRED,    "Key {k} val {v} is retired, {o}"),
-    ],
-    ES.ERROR: [
-        (VE.VAL_CHECK,      "Key {k} val {vi} failed check {vf}"),
-        (VE.VAL_REPLACED,   "Key {k} val {vi} is retired, use {vf} instead"),
-        (VE.VAL_RETIRED,    "Key {k} val {vi} is retired, consider using default value {vf}"),
-        (VE.VAL_TYPE,       "Key {k} val {vi} is the wrong type, {o}"),
-        (VE.VAL_INVALID,    "Key {k} val {vi} is invalid, {o}"),
-        (VE.VAL_MIN,        "Key {k} val {vi} is below minimum value {vf}"),
-        (VE.VAL_MAX,        "Key {k} val {vi} is above maximum value {vf}"),
-    ],
-    ES.FIX: [
-        (VE.VAL_REPLACED,   "Key {k} replaced retired val {vi} -> {vf}"),
-        (VE.VAL_RETIRED,    "Key {k} replaced retired val {vi} with default value {vf}"),
-        (VE.VAL_TYPE,       "Key {k} replaced val of wrong type {vi} -> {vf}"),
-        (VE.VAL_INVALID,    "Key {k} replaced invalid val {vi} -> {vf}"),
-        (VE.VAL_MIN,        "Key {k} set val {vi} to minimum value {vf}"),
-        (VE.VAL_MAX,        "Key {k} set val {vi} to maximum value {vf}"),
-    ],
-    ES.WARNING: [
-        (VE.VAL_DEPRECATED, "Key {k} val {v} is deprecated"),
-    ],
-    ES.INFO: [
-        (VE.VAL_DESC,       "Key {k} val {v} is valid, but has no description"),
-        (VE.VAL_CONVERTED,  "Key {k} val {vi} converted to {vf}"),
-    ],
-    None: (VE.VAL_ERRORS,   "Key {k} val {vi} is {e}, {o}"),
-}
+    # Formatters that take a subscript argument (e.g., {k[0]} or {v[1]})
+    sub_formatters = {
+        # Key formatters
+        "k":    lambda k, f: repr(k.names[f]) if f < len(k.names) else "None",
+        "ko":   lambda k, f: Formatter.options(k.names[f:]),
+        # Value formatters
+        "v":    lambda k, f: Formatter.value(k.vals[f]) if f < len(k.vals) else "None",
+        "vo":   lambda k, f: Formatter.options(k.vals[f:]),
+    }
+
+    def __init__(self, key: "MetaKey", field: str|None = None):
+        self.key = key
+        self.field = field
+        self.index = None
+
+    @staticmethod
+    def value(val, limit: int = 5) -> str:
+        """Format a value for display"""
+        if isinstance(val, set) and len(val) > limit:
+            return f"{{{repr(sorted(val)[:limit])[1:-1]}, ...}}"
+        if isinstance(val, list) and len(val) > limit:
+            return f"[{repr(val[:limit])[1:-1]}, ...]"
+        return repr(val)
+
+    @staticmethod
+    def options(opts: list) -> str:
+        """Return a string representation of a list of options"""
+        if not opts:
+            return "no valid matches found!"
+        if len(opts) == 1:
+            return f"did you mean {repr(opts[0])}?"
+        opt_str = ", ".join(repr(o) for o in opts)
+        return f"did you mean one of: {opt_str}?"
+
+    def format(self, message: str) -> str:
+        """Format a message by substituting the key information"""
+        return message.format_map(self)
+
+    def __getitem__(self, field):
+        """Make the ErrorFormatter act like a dict for formatting"""
+        if self.field is None:
+            if field not in self.formatters:
+                raise KeyError(f"Unknown field {field}")
+            return Formatter(self.key, field)
+        if self.index is None:
+            if self.field not in self.sub_formatters:
+                raise IndexError(f"Field {self.field} cannot take an index")
+            self.index = int(field)
+            return self
+        raise IndexError(f"Field {self.field}[{self.index}] cannot take an additional index")
+
+    def __format__(self, fmt: str) -> str:
+        """Format the error message for the key"""
+        if self.field is None:
+            raise KeyError("No field specified!")
+        if self.index is None:
+            out = self.formatters[self.field](self.key)
+        else:
+            out = self.sub_formatters[self.field](self.key, self.index)
+        return format(out, fmt)
 
 class MetaKey:
     """Class representing a metadata key-value pair and any fixes."""
@@ -101,17 +105,20 @@ class MetaKey:
         self.spec = specification.meta_keys.get(name, specification.KeySpec())
 
     @property
-    def ambiguous(self):
-        """Return True if the key is ambiguous (no clear match in the specification)"""
-        # Unknown keys don't count as ambiguous
-        if self.errors == VE.KEY_UNKNOWN:
+    def bad_name(self):
+        """Return True if the key has no valid name or is ambiguous"""
+        if not self.names:
+            return True
+        if len(self.names) == 1:
             return False
-        return len(self.names) != 1
+        if self.errors & VE.UNAMBIGUOUS:
+            return False
+        return True
 
     @property
     def name(self) -> str|None:
-        """Return the key name or None if ambiguous"""
-        if self.ambiguous:
+        """Return the key name, or None if invalid or ambiguous"""
+        if self.bad_name:
             return None
         return self.names[0]
 
@@ -134,12 +141,12 @@ class MetaKey:
 
     @property
     def bad_value(self) -> bool:
-        """Return True if the key has no valid value"""
+        """Return True if the key has no valid value or is ambiguous"""
         return len(self.vals) != 1 or VE.DELETED in self.errors
 
     @property
     def value(self):
-        """Return the value (or None if ambiguous or invalid)"""
+        """Return the value, or None if invalid or ambiguous)"""
         return None if self.bad_value else self.vals[0]
 
     @property
@@ -176,42 +183,24 @@ class MetaKey:
         """Return a string representation of the key name(s)"""
         if not self.names:
             return f"'{self.orig_key}' -> None"
-        if self.ambiguous:
-            return f"'{self.orig_key}' -> {self.names}"
+        if self.bad_name:
+            names = ", ".join(repr(n) for n in self.names)
+            return f"'{self.orig_key}' -> <{names}>"
         if self.names[0] == self.orig_key:
             return repr(self.names[0])
         return f"'{self.orig_key}' -> '{self.names[0]}'"
-
-    @staticmethod
-    def _fmt_val(v):
-        """Format a value for display"""
-        if isinstance(v, set) and len(v) > 5:
-            return f"{{{repr(sorted(v)[:5])[1:-1]}, ...}}"
-        if isinstance(v, list) and len(v) > 5:
-            return f"[{repr(v[:5])[1:-1]}, ...]"
-        return repr(v)
 
     @property
     def val_str(self) -> str:
         """Return a string representation of the value(s)"""
         if not self.vals:
-            return f"{self._fmt_val(self.orig_val)} -> None"
+            return f"{Formatter.value(self.orig_val)} -> None"
         if len(self.vals) > 1:
-            opts = ", ".join(repr(v) for v in self.vals)
-            return f"{self._fmt_val(self.orig_val)} -> [{opts}]"
+            opts = ", ".join(Formatter.value(v) for v in self.vals)
+            return f"{Formatter.value(self.orig_val)} -> <{opts}>"
         if self.vals[0] == self.orig_val and type(self.vals[0]) == type(self.orig_val):
-            return self._fmt_val(self.vals[0])
-        return f"{self._fmt_val(self.orig_val)} -> {self._fmt_val(self.vals[0])}"
-
-    @property
-    def condition(self) -> str:
-        """Return the name of the requirement condition, if any"""
-        return self.spec.condition_name or "no"
-
-    @property
-    def typename(self) -> str:
-        """Return the name of the key's type, if any"""
-        return str(self.spec.type)
+            return Formatter.value(self.vals[0])
+        return f"{Formatter.value(self.orig_val)} -> {Formatter.value(self.vals[0])}"
 
     def __repr__(self):
         errs = self.errors.name if self.errors else "GOOD"
@@ -222,8 +211,8 @@ class MetaKey:
         # User defaults and overrides have already been validated
         if self.errors & VE.USR_ERRORS:
             return
-        # Ambiguous and unknown keys have no spec to validate against
-        if self.ambiguous or VE.KEY_UNKNOWN in self.errors:
+        # Skip keys that don't have a spec to validate against
+        if self.bad_name or VE.KEY_UNKNOWN in self.errors:
             return
         # Get the specification for the key
         self.spec = specification.meta_keys.get(self.name, specification.KeySpec())
@@ -237,54 +226,28 @@ class MetaKey:
         if not self.spec.describe(self.value):
             self.errors |= VE.VAL_DESC
 
-    @staticmethod
-    def _fmt_opts(options: list) -> str:
-        """Return a string representation of a list of options"""
-        if not options:
-            return "no valid matches found!"
-        if len(options) == 1:
-            return f"did you mean '{options[0]}'?"
-        return f"did you mean one of {options}?"
-
-    def _fmt_msg(self, msg: str, **kwargs) -> str:
-        """Format a message with the key and value information"""
-        subs = {
-            "ki": repr(self.orig_key),
-            "kf": repr(self.name),
-            "k":  self.name_str,
-            "vi": self._fmt_val(self.orig_val),
-            "vf": self._fmt_val(self.vals[0]) if self.vals else "None",
-            "v":  self.val_str,
-        }
-        subs.update(kwargs)
-        return msg.format_map(subs)
-
-    def _get_error(self, msgs: dict, sev: ES, opts: list|None = None, **kwargs) -> tuple[ES, str]:
+    def _get_error(self, msgs: dict, sev: ES) -> tuple[ES, str]:
         """Return the first message with a matching error flag"""
-        if opts is not None:
-            kwargs["o"] = self._fmt_opts(opts)
         for err, msg in msgs.get(sev, []):
             if (err & self.errors) == err:
-                return (sev, self._fmt_msg(msg, **kwargs))
+                return (sev, Formatter(self).format(msg))
         # No matching message found
         config.log(f"No message found for key {self}")
-        err, msg = msgs[None]
-        err_name = (self.errors & err).name or "GOOD"
-        return (ES.CRITICAL, self._fmt_msg(msg, e=err_name, **kwargs))
+        return (ES.CRITICAL, Formatter(self).format(msgs[None]))
 
     def _get_severity(self, key: bool, fix: bool) -> ES:
         """Return the base severity of a validation error"""
         # Get the key or value error flags only
         errors = self.errors & (VE.KEY_ERRORS if key else VE.VAL_ERRORS)
-        # Critical flags or ambiguous keys/values are always critical severity
-        ambiguous = self.ambiguous if key else self.bad_value
-        if errors & VE.CRITICAL or ambiguous:
+        # Critical flags or bad keys/values are always critical severity
+        if errors & VE.CRITICAL or (self.bad_name if key else self.bad_value):
             return ES.CRITICAL
-        # Error flags are error severity normally but fix severity if in fix mode
-        if errors & VE.ERROR:
-            if errors & VE.UNFIXABLE:
-                return ES.ERROR
-            return ES.FIX if fix else ES.ERROR
+        # Error flags or multiple options are error severity
+        if errors & VE.ERROR or (len(self.names) > 1 if key else len(self.vals) > 1):
+            # If we're in fix mode and the error is fixable, return fix severity instead
+            if fix and not errors & VE.UNFIXABLE:
+                return ES.FIX
+            return ES.ERROR
         # Warning flags are warning severity
         if errors & VE.WARNING:
             return ES.WARNING
@@ -300,22 +263,16 @@ class MetaKey:
 
         # If we have a user error flag, it takes precedence
         if self.errors & VE.USR_ERRORS:
-            error = self._get_error(USR_ERRORS, ES.FIX if fix else ES.ERROR)
+            error = self._get_error(config.usr_error_messages, ES.FIX if fix else ES.ERROR)
 
         # Get the list of key options and severity for any key errors
         severity = self._get_severity(key=True, fix=fix)
-        opts = self.names
-        # Special case for unknown keys
-        if self.errors & VE.KEY_ERRORS == VE.KEY_UNKNOWN:
-            opts = self.names[1:] # names[0] is the original key and names[1:] are close matches
-            if not opts:
-                severity = ES.WARNING
         # Check for required keys that have been deleted or have no default value
         if VE.KEY_REQUIRED in self.errors and (self.errors & VE.USR_DELETED or not self.vals):
             severity = ES.CRITICAL
         # Replace the existing error if the key error is more severe
         if severity > error[0]:
-            error = self._get_error(KEY_ERRORS, severity, opts, c=self.condition)
+            error = self._get_error(config.key_error_messages, severity)
 
         # Get the severity for any value errors
         severity = self._get_severity(key=False, fix=fix)
@@ -325,7 +282,7 @@ class MetaKey:
             severity = ES.NONE
         # Replace the existing error if the value error is more severe
         if severity > error[0]:
-            error = self._get_error(VAL_ERRORS, severity, self.vals, t=self.typename)
+            error = self._get_error(config.val_error_messages, severity)
 
         return error
 

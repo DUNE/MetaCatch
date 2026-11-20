@@ -1,6 +1,99 @@
-##################################################
-#               MetaCatch Settings               #
-##################################################
+################################################################################
+#                              MetaCatch Settings                              #
+################################################################################
+
+# This file controls the behavior of the MetaCatch program
+# The actual metadata specification is defined in the specification.yaml file
+
+################################################################################
+#                              Error Flag Classes                              #
+################################################################################
+
+# Group error flags into classes for reporting and filtering
+error_groups:
+    CRITICAL: ["MRG_CONFLICT"]
+    WARNING:  ["KEY_DEPRECATED", "KEY_UNKNOWN", "KEY_UNSPECIFIED", "VAL_DEPRECATED", "MRG_ORDERED"]
+    INFO:     ["KEY_DESC", "VAL_DESC", "VAL_CONVERTED"]
+    DELETED:  ["KEY_RETIRED", "USR_DELETED", "MRG_DELETED"]
+    UNFIXABLE: ["KEY_UNKNOWN", "KEY_RETIRED", "VAL_RETIRED"]
+    UNAMBIGUOUS: ["KEY_UNKNOWN"]
+
+################################################################################
+#                                Error Messages                                #
+################################################################################
+
+usr_error_messages:
+    ERROR:
+      - USR_DELETED:    "Key {k} val {v} should be deleted by user override"
+      - USR_OVERRIDE:   "Key {k} val {vi} should be set to user override {vf}"
+      - USR_DEFAULT:    "Missing key {k} should be set to user default value {vf}"
+    FIX:
+      - USR_DELETED:    "Deleted key {k} val {v} by user override"
+      - USR_OVERRIDE:   "Set key {k} val {vi} to user override {vf}"
+      - USR_DEFAULT:    "Set missing key {k} to user default value {vf}"
+    ~:                  "Key {k} val {v} is {ue}"
+
+key_error_messages:
+    CRITICAL:
+      - KEY_REQUIRED|USR_DELETED:    "Deleted key {k} is required for {c} files!"
+      - KEY_REQUIRED:   "Missing key {k} is required for {c} files!"
+      - KEY_ILLEGAL:    "Key {ki} is malformed, {ko}"
+      - KEY_INVALID:    "Key {ki} is invalid, {ko}"
+    ERROR:
+      - KEY_REQUIRED:   "Missing key {k} required for {c} files (default value {v})"
+      - KEY_CONFLICT:   "Key {ki} val {vi} conflicts with replacement key {kf} val {vf}"
+      - KEY_REDUNDANT:  "Key {ki} is redundant with replacement key {kf}"
+      - KEY_ILLEGAL:    "Key {ki} is malformed, {ko}"
+      - KEY_RETIRED:    "Key {k} is retired: {kd}"
+      - KEY_REPLACED:   "Key {ki} is retired, use {kf} instead"
+      - KEY_INVALID:    "Key {ki} is invalid, {ko}"
+      - KEY_UNKNOWN:    "Key {ki} is unknown, {ko[1]}"
+    FIX:
+      - KEY_REQUIRED:   "Set missing key {k} to default value {v} (required for {c} files)"
+      - KEY_CONFLICT:   "Ignored redundant key {ki} in favor of {kf} with value {vf}"
+      - KEY_REDUNDANT:  "Ignored redundant key {ki} in favor of {kf}"
+      - KEY_ILLEGAL:    "Replaced malformed key {ki} -> {kf}"
+      - KEY_RETIRED:    "Deleted retired key {k}"
+      - KEY_REPLACED:   "Replaced retired key {ki} -> {kf}"
+      - KEY_INVALID:    "Replaced invalid key {ki} -> {kf}"
+    WARNING:
+      - KEY_UNSPECIFIED:    "Key {k} has no specification, it may be deprecated or invalid"
+      - KEY_DEPRECATED:     "Key {k} is deprecated: {kd}"
+      - KEY_UNKNOWN:        "Key {k} is unknown, are you sure it is correct?"
+    INFO:
+      - KEY_DESC:           "Key {k} is valid, but has no description"
+    ~:                      "Key {ki} is {ke}, {ko}"
+
+val_error_messages:
+    CRITICAL:
+      - VAL_INVALID:        "Key {k} val {vi} is invalid, {vo}"
+      - VAL_TYPE:           "Key {k} val {vi} is the wrong type, expected {t}"
+      - VAL_RETIRED|VAL_DESC: "Key {k} val {vi} is retired, {vo}"
+      - VAL_RETIRED:        "Key {k} val {vi} is retired: {vd}"
+    ERROR:
+      - VAL_REPLACED:       "Key {k} val {vi} is retired, use {vf} instead"
+      - VAL_RETIRED|VAL_DESC: "Key {k} val {vi} is retired, {vo}"
+      - VAL_RETIRED:        "Key {k} val {vi} is retired: {vd}"
+      - VAL_TYPE:           "Key {k} val {vi} is the wrong type, {vo}"
+      - VAL_INVALID:        "Key {k} val {vi} is invalid, {vo}"
+      - VAL_MIN:            "Key {k} val {vi} is below minimum value {vf}"
+      - VAL_MAX:            "Key {k} val {vi} is above maximum value {vf}"
+    FIX:
+      - VAL_REPLACED:       "Key {k} replaced retired val {vi} -> {vf}"
+      - VAL_TYPE:           "Key {k} replaced val of wrong type {vi} -> {vf}"
+      - VAL_INVALID:        "Key {k} replaced invalid val {vi} -> {vf}"
+      - VAL_MIN:            "Key {k} set val {vi} to minimum value {vf}"
+      - VAL_MAX:            "Key {k} set val {vi} to maximum value {vf}"
+    WARNING:
+      - VAL_DEPRECATED:     "Key {k} val {v} is deprecated: {vd}"
+    INFO:
+      - VAL_DESC:           "Key {k} val {v} is valid, but has no description"
+      - VAL_CONVERTED:      "Key {k} val {vi} converted to {vf}"
+    ~:                      "Key {k} val {vi} is {ve}, {vo}"
+
+################################################################################
+#                             Key & Value Matching                             #
+################################################################################
 
 # Metadata keys may only contain lower case letters, underscores, and periods.
 # MetaCatch will attempt to correct illegal keys by converting letters to lower case.
@@ -8,6 +101,7 @@
 allowed_key_characters:
     '.': '.,;:'
 
+# Edit distance settings for fuzzy matching keys and values
 edit_distance:
     shift: 0.5 # Additional edit distance for shifted keys (in units of key widths)
     ratio: 0.3 # Maximum fractional edit distance to match

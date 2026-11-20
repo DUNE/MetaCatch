@@ -182,6 +182,8 @@ class KeySpec:
         if spec is None:
             spec = {}
             self.status = VE.KEY_UNKNOWN
+        elif not spec:
+            self.status = VE.KEY_UNSPECIFIED | VE.KEY_DEPRECATED
         else:
             self.set_status(spec.get("status", "current"))
         self.description: str = spec.get("description", "")
@@ -194,7 +196,11 @@ class KeySpec:
             raise SpecError(f"Unknown requirement condition '{self.required}'")
         self.type = KeyType(spec.get("type", None), spec.get("merge", None))
         self.fixes = spec.get("fixes", {})
+        if any(not self.type.check(k) for k in self.fixes.values()):
+            raise SpecError("Fixes contain values of the wrong type")
         if 'default' in spec:
+            if not self.type.check(spec['default']):
+                raise SpecError("Default value is of the wrong type")
             self.fixes[None] = spec['default']
         self.checks = [(c, expression.parse(c)) for c in spec.get("checks", [])]
         bad_params = spec.keys() - self.params
@@ -246,13 +252,13 @@ class KeySpec:
         return isinstance(self.required, str)
 
     @property
-    def condition_name(self):
+    def condition_name(self) -> str:
         """Return the name of the requirement condition, if any"""
         if self.absolute:
             return "all"
         if self.conditional:
             return self.required
-        return None
+        return "no"
 
     @property
     def required_category(self):
@@ -295,28 +301,35 @@ class KeySpec:
         except TypeError:
             return None
 
-    def check(self, value) -> tuple[list, VE]:
-        """Check if a value is valid for the key"""
-        errors = VE(0)
-        # First check for any known fixes for the value
-        if (fixed := self.fix(value)) is not None:
-            return [fixed], VE.VAL_REPLACED
-        # Then check the type of the value
+    def convert(self, value) -> tuple[list, VE]:
+        """Convert a value to the key's type, if possible"""
         try:
             converted = self.type.convert(value)
         except ValueError:
             return [], VE.VAL_TYPE
-        # If the converted value is unchanged, return the original value
+        # If the converted value is unchanged, return without any error flags
         if converted == value and type(converted) == type(value):
-            return [value], errors
-        # Check the known fixes again for the converted value
-        if (fixed := self.fix(converted)) is not None:
-            return [fixed], errors | VE.VAL_REPLACED
-        # Otherwise, flag the value as converted and check if it was a type error
-        errors |= VE.VAL_CONVERTED
+            return [converted], VE(0)
+        # Flag that the value was converted, and check if it was a type error
+        errors = VE.VAL_CONVERTED
         if not self.type.check(value):
             errors |= VE.VAL_TYPE
         return [converted], errors
+
+    def check(self, value) -> tuple[list, VE]:
+        """Check if a value is valid for the key"""
+        # First check for any known fixes for the value
+        if (fixed := self.fix(value)) is not None:
+            return [fixed], VE.VAL_REPLACED
+        # Then check the type of the value
+        converted, errors = self.convert(value)
+        if not converted:
+            return [], errors
+        # Check the known fixes again for the converted value
+        if (fixed := self.fix(converted[0])) is not None:
+            return [fixed], errors | VE.VAL_REPLACED
+        # Otherwise, return the converted value and any error flags
+        return converted, errors
 
     def deconvert(self, value):
         """Deconvert a value from the key's type to a JSON-serializable type"""
@@ -336,10 +349,26 @@ class BoolKeySpec(KeySpec):
     params = KeySpec.params | {"values"}
 
     def __init__(self, spec: dict):
+        # Pop fixes and defaults from the spec to avoid type checking errors
+        fixes = spec.pop("fixes", {})
+        if 'default' in spec:
+            fixes[None] = spec.pop("default")
+        # Do the normal KeySpec initialization
         super().__init__(spec)
-        self.true = True
-        self.false = False
+        # Get the true and false values from the spec
+        self.true, self.false = True, False
         self.set_values(spec.get("values", []))
+        # Add the fixes to the key, making sure they are valid
+        for bad, fix in fixes.items():
+            if fix is True or fix == self.true:
+                self.fixes[bad] = True
+            elif fix is False or fix == self.false:
+                self.fixes[bad] = False
+            else:
+                msg = "Default value" if bad is None else "Fixed values"
+                true_str = "True" if self.true is True else f"True, {repr(self.true)}"
+                false_str = "False" if self.false is False else f"False, {repr(self.false)}"
+                raise SpecError(f"{msg} must be one of: {true_str}, {false_str}")
 
     def set_values(self, values: list):
         """Set the true and false values for the key"""
@@ -360,11 +389,9 @@ class BoolKeySpec(KeySpec):
         if bool0 == bool1:
             raise SpecError(f"Values {values} both evaluate to {bool0}")
         if bool0:
-            self.true = values[0]
-            self.false = values[1]
+            self.true, self.false = values[0], values[1]
         else:
-            self.true = values[1]
-            self.false = values[0]
+            self.true, self.false = values[1], values[0]
         # Flag that the key has custom values and needs to be deconverted
         self.status |= VE.VAL_CONVERTED
 
@@ -394,18 +421,16 @@ class BoolKeySpec(KeySpec):
 
     def check(self, value) -> tuple[list, VE]:
         """Check if a value is valid for the key"""
-        # First check for actual boolean values
-        if value is True:
+        # Check for actual boolean values or the custom true/false values
+        if value is True or value == self.true:
             return [True], VE(0) if self.true is True else VE.VAL_CONVERTED
-        if value is False:
+        if value is False or value == self.false:
             return [False], VE(0) if self.false is False else VE.VAL_CONVERTED
-        # Check if the value is one of the true or false values
-        if value == self.true:
-            return [True], VE.VAL_CONVERTED
-        if value == self.false:
-            return [False], VE.VAL_CONVERTED
-        # Do standard type checking and conversion
-        return super().check(value)
+        # Check for any known fixes for the value
+        if (fixed := self.fix(value)) is not None:
+            return [fixed], VE.VAL_REPLACED
+        # Try to convert the value to a boolean
+        return self.convert(value)[0], VE.VAL_TYPE
 
     def deconvert(self, value):
         """Deconvert a value from the key's type to a JSON-serializable type"""
@@ -694,9 +719,9 @@ def define_key(key: str, spec: dict):
     if isinstance(spec, str):
         replaced_keys[key] = spec
         return
-    # Keys without a specification are considered deprecated
+    # Make sure the specification is a dictionary, even if it is empty
     if not spec:
-        spec = {"status": "DEPRECATED"}
+        spec = {}
     # Try to parse the key specification dictionary
     try:
         key_obj = parse(spec)
