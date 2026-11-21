@@ -489,7 +489,7 @@ retention.class:
         "study":
 
 ################################################################################
-#                             Optional but Useful                              #
+#                         Optional but Fairly Standard                         #
 ################################################################################
 
 core.start_time:
@@ -502,10 +502,17 @@ core.end_time:
     type: float
     merge: max
 
+core.subruns:
+    description: "List of subrun numbers included (not useful for multi-run files)"
+    type: set[int]
+    merge: union
+    checks: ["len(core.runs) == 1"]
+
 core.events:
     description: "List of event numbers included (not useful for multi-run files)"
     type: set[int]
     merge: union
+    checks: ["len(core.runs_subruns) == 1"]
 
 core.first_event_number:
     description: "First event number in the file"
@@ -749,11 +756,10 @@ dune.daq_test:
 
 art.file_format_era:
 art.file_format_version:
-art.first_event:
-art.last_event:
+art.first_event:                    core.first_event_number
+art.last_event:                     core.last_event_number
 art.process_name:
 art.run_type:
-core.subruns:
 dune.dataset_name:
 dune.dqc_quality:
 dune.lrs_active_config:
