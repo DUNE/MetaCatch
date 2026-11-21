@@ -1,0 +1,10 @@
+{
+    "origin.applications.names": [
+        "gen",
+        "g4_stage1"
+    ],
+    "origin.applications.versions": {
+        "gen": "7",
+        "g4_stage1": "37"
+    }
+}
