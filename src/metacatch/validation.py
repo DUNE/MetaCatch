@@ -15,20 +15,23 @@ class Formatter:
         "ki":   lambda k: repr(k.orig_key),
         "kf":   lambda k: repr(k.name),
         "k":    lambda k: k.name_str,
+        "ks":   lambda k: repr(k.names),
         "ko":   lambda k: Formatter.options(k.names),
         "kd":   lambda k: k.spec.description or "no description",
-        "ke":   lambda k: (k.errors & VE.KEY_ERRORS).name or "GOOD",
+        "ke":   lambda k: (k.errors & VE.KEY_ERRORS).name or k.errors.name or "GOOD",
         # Value formatters
         "vi":   lambda k: Formatter.value(k.orig_val),
         "vf":   lambda k: Formatter.value(k.value),
         "v":    lambda k: k.val_str,
+        "vs":   lambda k: Formatter.value(k.vals),
         "vo":   lambda k: Formatter.options(k.vals),
         "vd":   lambda k: k.spec.describe(k.value) or "no description",
-        "ve":   lambda k: (k.errors & VE.VAL_ERRORS).name or "GOOD",
+        "ve":   lambda k: (k.errors & VE.VAL_ERRORS).name or k.errors.name or "GOOD",
         # Other formatters
+        "ue":   lambda k: (k.errors & VE.USR_ERRORS).name or k.errors.name or "GOOD",
+        "me":   lambda k: (k.errors & VE.MRG_ERRORS).name or k.errors.name or "GOOD",
+        "e":    lambda k: k.errors.name or "GOOD",
         "t":    lambda k: str(k.spec.type),
-        "ue":   lambda k: (k.errors & VE.USR_ERRORS).name or "GOOD",
-        "e":    lambda k: (k.errors.name or "GOOD"),
         "c":    lambda k: k.spec.condition_name,
     }
 
@@ -36,15 +39,18 @@ class Formatter:
     sub_formatters = {
         # Key formatters
         "k":    lambda k, f: repr(k.names[f]) if f < len(k.names) else "None",
+        "ks":   lambda k, f: repr(k.names[f:]),
         "ko":   lambda k, f: Formatter.options(k.names[f:]),
         # Value formatters
         "v":    lambda k, f: Formatter.value(k.vals[f]) if f < len(k.vals) else "None",
+        "vs":   lambda k, f: Formatter.value(k.vals[f:]),
         "vo":   lambda k, f: Formatter.options(k.vals[f:]),
     }
 
-    def __init__(self, key: "MetaKey", field: str|None = None):
+    def __init__(self, key: "MetaKey", **kwargs):
         self.key = key
-        self.field = field
+        self.overrides = kwargs
+        self.field = None
         self.index = None
 
     @staticmethod
@@ -72,10 +78,14 @@ class Formatter:
 
     def __getitem__(self, field):
         """Make the ErrorFormatter act like a dict for formatting"""
+        # If we don't have a field yet, return a new formatter for the field
         if self.field is None:
             if field not in self.formatters:
                 raise KeyError(f"Unknown field {field}")
-            return Formatter(self.key, field)
+            out = Formatter(self.key, **self.overrides)
+            out.field = field
+            return out
+        # If we already have a field, try to set the index
         if self.index is None:
             if self.field not in self.sub_formatters:
                 raise IndexError(f"Field {self.field} cannot take an index")
@@ -87,6 +97,8 @@ class Formatter:
         """Format the error message for the key"""
         if self.field is None:
             raise KeyError("No field specified!")
+        if override := self.overrides.get(self.field):
+            return format(override, fmt)
         if self.index is None:
             out = self.formatters[self.field](self.key)
         else:
@@ -142,7 +154,13 @@ class MetaKey:
     @property
     def bad_value(self) -> bool:
         """Return True if the key has no valid value or is ambiguous"""
-        return len(self.vals) != 1 or VE.DELETED in self.errors
+        if not self.vals or VE.DELETED in self.errors:
+            return True
+        if len(self.vals) == 1:
+            return False
+        if self.errors & VE.UNAMBIGUOUS:
+            return False
+        return True
 
     @property
     def value(self):
@@ -208,8 +226,11 @@ class MetaKey:
 
     def validate(self):
         """Validate the key and value against the specification"""
-        # User defaults and overrides have already been validated
-        if self.errors & VE.USR_ERRORS:
+        # User defaults and overrides and merged files have already been validated
+        if self.errors & VE.USR_ERRORS or self.errors & VE.MRG_ERRORS:
+            return
+        # Skip keys if the value has already been modified
+        if self.vals != [self.orig_val]:
             return
         # Skip keys that don't have a spec to validate against
         if self.bad_name or VE.KEY_UNKNOWN in self.errors:
@@ -226,15 +247,6 @@ class MetaKey:
         if not self.spec.describe(self.value):
             self.errors |= VE.VAL_DESC
 
-    def _get_error(self, msgs: dict, sev: ES) -> tuple[ES, str]:
-        """Return the first message with a matching error flag"""
-        for err, msg in msgs.get(sev, []):
-            if (err & self.errors) == err:
-                return (sev, Formatter(self).format(msg))
-        # No matching message found
-        config.log(f"No message found for key {self}")
-        return (ES.CRITICAL, Formatter(self).format(msgs[None]))
-
     def _get_severity(self, key: bool, fix: bool) -> ES:
         """Return the base severity of a validation error"""
         # Get the key or value error flags only
@@ -242,8 +254,8 @@ class MetaKey:
         # Critical flags or bad keys/values are always critical severity
         if errors & VE.CRITICAL or (self.bad_name if key else self.bad_value):
             return ES.CRITICAL
-        # Error flags or multiple options are error severity
-        if errors & VE.ERROR or (len(self.names) > 1 if key else len(self.vals) > 1):
+        # Error flags are error severity
+        if errors & VE.ERROR:
             # If we're in fix mode and the error is fixable, return fix severity instead
             if fix and not errors & VE.UNFIXABLE:
                 return ES.FIX
@@ -257,34 +269,78 @@ class MetaKey:
         # Otherwise, the key/value is valid so return no severity
         return ES.NONE
 
+    def _merge_report(self) -> tuple[ES, str]:
+        """Return a tuple of (severity, message) for the most severe merge error"""
+        errors = self.errors & VE.MRG_ERRORS
+        if not errors:
+            return ES.NONE, ""
+        # Special case for subsets of dictionaries
+        if self.spec.type == dict and errors & VE.MRG_SUBSET:
+            # If this counts as a conflict, return the conflict message for each dict key
+            if errors & VE.MRG_CONFLICT:
+                msg = config.error_message("MRG", ES.CRITICAL, VE.MRG_CONFLICT)[1]
+                msg_list = []
+                for key, vals in sorted(self.vals[1].items()):
+                    name = f"'{self.name_str[1:-1]}['{key}']'"
+                    val_str = Formatter.value(vals)
+                    msg_list.append(Formatter(self, k=name, vs=val_str).format(msg))
+                return ES.CRITICAL, "\n          ".join(msg_list)
+            # Otherwise, return the deletion message for each dict key
+            msg = config.error_message("MRG", ES.FIX, VE.MRG_DELETED)[1]
+            msg_list = []
+            for key, vals in sorted(self.vals[1].items()):
+                name = f"'{self.name_str[1:-1]}['{key}']'"
+                msg_list.append(Formatter(self, k=name).format(msg))
+            return ES.FIX, "\n          ".join(msg_list)
+        # Otherwise, get the severity and message normally
+        if errors & VE.CRITICAL:
+            severity = ES.CRITICAL
+        elif errors & VE.ERROR:
+            severity = ES.ERROR if errors & VE.UNFIXABLE else ES.FIX
+        elif errors & VE.WARNING:
+            severity = ES.WARNING
+        elif errors & VE.INFO:
+            severity = ES.INFO
+        else:
+            return ES.NONE, ""
+        return config.error_message("MRG", severity, errors)
+
     def report(self, fix: bool = False) -> tuple[ES, str]:
         """Return a tuple of (severity, message) for the most severe error"""
-        error = (ES.NONE, "")
+        # First check for any merge error flags
+        error = self._merge_report()
 
-        # If we have a user error flag, it takes precedence
+        # Next check for any user error flags
         if self.errors & VE.USR_ERRORS:
-            error = self._get_error(config.usr_error_messages, ES.FIX if fix else ES.ERROR)
+            error = config.error_message("USR", ES.FIX if fix else ES.ERROR, self.errors)
 
         # Get the list of key options and severity for any key errors
         severity = self._get_severity(key=True, fix=fix)
         # Check for required keys that have been deleted or have no default value
         if VE.KEY_REQUIRED in self.errors and (self.errors & VE.USR_DELETED or not self.vals):
             severity = ES.CRITICAL
+        # Unknwon keys with multiple options are errors
+        elif VE.KEY_UNKNOWN in self.errors and len(self.names) > 1:
+            severity = ES.ERROR
         # Replace the existing error if the key error is more severe
         if severity > error[0]:
-            error = self._get_error(config.key_error_messages, severity)
+            error = config.error_message("KEY", severity, self.errors)
 
         # Get the severity for any value errors
         severity = self._get_severity(key=False, fix=fix)
+        # Skip value checks for deleted keys
+        if self.errors & VE.DELETED:
+            severity = ES.NONE
         # Suppress type conversions for bools and sets, since they will be converted back
-        if (self.errors & VE.VAL_ERRORS == VE.VAL_CONVERTED and
+        elif (self.errors & VE.VAL_ERRORS == VE.VAL_CONVERTED and
             isinstance(self.vals[0], (bool, set))):
             severity = ES.NONE
         # Replace the existing error if the value error is more severe
         if severity > error[0]:
-            error = self._get_error(config.val_error_messages, severity)
+            error = config.error_message("VAL", severity, self.errors)
 
-        return error
+        # Format the error message with the key information and return it
+        return error[0], Formatter(self).format(error[1])
 
 class MetaDict:
     """Class representing a validated metadata dictionary, plus any errors"""
@@ -357,6 +413,10 @@ class MetaDict:
     def values(self):
         """Return an iterator over the good values"""
         return (k.value for k in self._good_keys.values())
+
+    def bad_keys(self):
+        """Return an iterator over the bad MetaKeys"""
+        return self._bad_keys.keys()
 
     @property
     def output(self) -> dict:
@@ -633,7 +693,7 @@ def validate_file(
     defaults: dict|None = None,
     overrides: dict|None = None
 ) -> list[tuple[ES, str]]:
-    """Validate a metadata dictionary against the specification"""
+    """Validate a file dictionary against the specification"""
     # Extract the metadata dictionary and convert it to a MetaDict, with defaults and overrides
     metadata = file_data.pop("metadata", None)
     if metadata is None:
@@ -644,3 +704,86 @@ def validate_file(
     # Insert the MetaDict back into the file data, and then return the report
     file_data["metadata"] = meta_dict
     return report
+
+def merge_files(files: list[dict], name: str) -> tuple[dict, list[tuple[ES, str]]]:
+    """Merge multiple file dictionaries into a single dictionary"""
+    # Make sure we have multiple files to merge
+    if len(files) < 2:
+        raise ValueError("At least two files are required to merge!")
+    # Get the metadata dictionaries from all files and make sure they are validated
+    md = [f["metadata"] for f in files]
+    if not all(isinstance(m, MetaDict) for m in md):
+        raise ValueError("All input files must be validated before merging!")
+    # Make sure none of the files are retired
+    if any(f.get("retired") for f in files):
+        raise ValueError("Retired files cannot be merged!")
+    # Make sure all files have the same namespace
+    namespaces = {f.get("namespace") for f in files}
+    if len(namespaces) > 1:
+        raise ValueError(f"Cannot merge files with different namespaces: {namespaces}")
+    if not namespaces or (namespace := namespaces.pop()) is None:
+        raise ValueError("Cannot merge files with no namespace!")
+    # Make sure all file names have the same extension
+    extensions = {f["name"].split('.', 1)[1] for f in files}
+    if len(extensions) > 1:
+        raise ValueError(f"Cannot merge files with different extensions: {extensions}")
+    if not name.endswith(ext := f".{extensions.pop()}"):
+        raise ValueError(f"Merged file extension does not match the input files: {ext}")
+
+    # Get parents of all files
+    parent_fids = set()
+    parent_dids = set()
+    for f in files:
+        for parent in f.get("parents", []):
+            if fid := parent.get("fid"):
+                parent_fids.add(fid)
+            elif (par_name := parent.get("name")) and (par_ns := parent.get("namespace")):
+                parent_dids.add(f"{par_ns}:{par_name}")
+            else:
+                raise ValueError(f"File {f.get('name')} has invalid parent dict: {parent}")
+
+    # Create a new merged file dictionary with the given name and namespace
+    merged_file = {
+        "name": name,
+        "namespace": namespace,
+        "retired": False,
+        "children": [],
+        "parents": [{"fid": fid} for fid in parent_fids] + [{"did": did} for did in parent_dids],
+    }
+
+    # Get the set of valid metadata keys across all files
+    merged_meta = MetaDict({})
+    for key in set().union(*(m.keys() for m in md)):
+        # Find the first file that has this key and use its value as the base
+        first_key = next((m.item(key) for m in md if key in m), None)
+        if first_key is None:
+            raise ValueError(f"Key {key} not found in any file?")
+        merged_key = copy.deepcopy(first_key)
+        # Combine the error flags from all files for this key
+        for m in md:
+            if (k := m.item(key)) is not None:
+                merged_key.errors |= k.errors
+        # Actually merge the values for this key across all files
+        merged_key.set_values(*merged_key.spec.merge(m.get(key) for m in md))
+        # Add the merged key to the merged file's metadata
+        merged_meta.add_key(merged_key)
+
+    # Also get the set of bad keys across all files
+    for key in set().union(*(m.bad_keys() for m in md)):
+        # Find the first file that has this bad key and use its value as the base
+        first_key = next((k for m in md if (k := m.item(key))), None)
+        if first_key is None:
+            raise ValueError(f"Bad key {key} not found in any file?")
+        merged_key = copy.deepcopy(first_key)
+        # Combine the error flags from all files for this bad key
+        for m in md:
+            if (k := m.item(key)) is not None:
+                merged_key.errors |= k.errors
+        # Add the merged bad key to the merged file's metadata
+        merged_meta.add_bad(merged_key)
+
+    # Validate the merged MetaDict and get the error report
+    report = merged_meta.validate(merged_file, fix=True)
+    # Insert the MetaDict back into the file data, and then return it with the report
+    merged_file["metadata"] = merged_meta
+    return merged_file, report

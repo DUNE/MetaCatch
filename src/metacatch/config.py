@@ -17,12 +17,10 @@ def set_char_substitutions(subs: dict):
     for key, options in subs.items():
         char_substitutions.update({opt: key for opt in options})
 
-usr_error_messages = {}
-key_error_messages = {}
-val_error_messages = {}
-def set_error_messages(messages: dict, settings: dict):
+error_messages = {}
+def set_error_messages(cat: str, settings: dict):
     """Build the error messages dictionary"""
-    messages.clear()
+    error_messages[cat] = (messages := {})
     if (default := settings.pop(None, None)) is None:
         raise ValueError("Missing default error message in settings")
     messages[None] = default
@@ -34,6 +32,18 @@ def set_error_messages(messages: dict, settings: dict):
                 raise ValueError("Error messages must be of the form 'FLAG: message'")
             flag, msg = next(iter(item.items()))
             messages[sev].append((ValidationError.group(flag), msg))
+
+def error_message(cat: str, severity: "ErrorSeverity", flags: "ValidationError") -> tuple:
+    """Return the error message for a given category, severity, and flags"""
+    if cat not in error_messages:
+        raise ValueError(f"Unknown error category: {cat}")
+    messages = error_messages[cat]
+    if severity not in messages:
+        raise ValueError(f"{cat}_ERRORS unhandled severity: {severity}")
+    for flag, msg in messages[severity]:
+        if (flags & flag) == flag:
+            return severity, msg
+    return ErrorSeverity.CRITICAL, messages[None]
 
 class ErrorSeverity(enum.IntEnum):
     """Enum for the severity of a metadata validation error"""
@@ -75,6 +85,7 @@ class ValidationError(enum.Flag):
     MRG_ORDERED     = enum.auto()
     MRG_DELETED     = enum.auto()
     MRG_SUBSET      = enum.auto()
+    MRG_MODIFIED    = enum.auto()
 
     # Error groups for convenience
     @classmethod
@@ -150,9 +161,10 @@ def load():
     # Create the error groups from the settings
     ValidationError.init(settings.pop("error_groups"))
     # Load error messages
-    set_error_messages(usr_error_messages, settings.pop("usr_error_messages"))
-    set_error_messages(key_error_messages, settings.pop("key_error_messages"))
-    set_error_messages(val_error_messages, settings.pop("val_error_messages"))
+    set_error_messages("MRG", settings.pop("mrg_error_messages"))
+    set_error_messages("USR", settings.pop("usr_error_messages"))
+    set_error_messages("KEY", settings.pop("key_error_messages"))
+    set_error_messages("VAL", settings.pop("val_error_messages"))
     # Update key matching settings
     edit_distance.update(settings.pop("edit_distance"))
     set_char_substitutions(settings.pop("allowed_key_characters"))

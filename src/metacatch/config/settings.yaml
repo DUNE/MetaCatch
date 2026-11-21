@@ -13,14 +13,53 @@
 error_groups:
     CRITICAL: ["MRG_CONFLICT"]
     WARNING:  ["KEY_DEPRECATED", "KEY_UNKNOWN", "KEY_UNSPECIFIED", "VAL_DEPRECATED", "MRG_ORDERED"]
-    INFO:     ["KEY_DESC", "VAL_DESC", "VAL_CONVERTED"]
+    INFO:     ["KEY_DESC", "VAL_DESC", "VAL_CONVERTED", "MRG_MODIFIED"]
     DELETED:  ["KEY_RETIRED", "USR_DELETED", "MRG_DELETED"]
     UNFIXABLE: ["KEY_UNKNOWN", "KEY_RETIRED", "VAL_RETIRED"]
-    UNAMBIGUOUS: ["KEY_UNKNOWN"]
+    UNAMBIGUOUS: ["KEY_UNKNOWN", "MRG_SUBSET"]
 
 ################################################################################
 #                                Error Messages                                #
 ################################################################################
+
+# For a given category and severity of error, the first message with matching flags will be used
+# The message may contain placeholders for the key, value, and other relevant information:
+#   Key Placeholders:
+#       {k}  - key name (including any reccomended changes)
+#       {ki} - initial key name
+#       {kf} - final key name
+#       {ks} - list of possible key names
+#       {ko} - key options message (e.g. "did you mean one of: 'a', 'b', 'c'?")
+#       {kd} - key description
+#       {ke} - key error flags
+#   Value Placeholders:
+#       {v}  - value (including any recommended changes)
+#       {vi} - initial value
+#       {vf} - final value
+#       {vs} - list of possible values
+#       {vo} - value options message (e.g. "did you mean one of: 'a', 'b', 'c'?")
+#       {vd} - value description
+#       {ve} - value error flags
+#   Other Placeholders:
+#       {ue} - user error flags
+#       {me} - merge error flags
+#       {e}  - all error flags
+#       {t}  - key type
+#       {c}  - condition name (or "all" or "no" for absolute conditions)
+
+mrg_error_messages:
+    CRITICAL:
+      - MRG_CONFLICT:   "Merging key {k} encountered conficting values {vs}"
+    ERROR:
+      - MRG_MISSING:    "Merging key {k} encounted missing values"
+    FIX:
+      - MRG_DELETED:    "Deleted key {k} from merged files"
+      - MRG_SUBSET:     "Merged key {k} omitted some values: {v[1]}"
+    WARNING:
+      - MRG_ORDERED:    "Merged key {k} output depends on the order of input files"
+    INFO:
+      - MRG_MODIFIED:   "Merging key {k} modified values: {vi}(first file) -> {vf}(merged)"
+    ~:                  "Merging key {k} encountered errors: {me}"
 
 usr_error_messages:
     ERROR:
@@ -36,6 +75,7 @@ usr_error_messages:
 key_error_messages:
     CRITICAL:
       - KEY_REQUIRED|USR_DELETED:    "Deleted key {k} is required for {c} files!"
+      - KEY_REQUIRED|MRG_DELETED:    "Merging deleted key {k} required for {c} files!"
       - KEY_REQUIRED:   "Missing key {k} is required for {c} files!"
       - KEY_ILLEGAL:    "Key {ki} is malformed, {ko}"
       - KEY_INVALID:    "Key {ki} is invalid, {ko}"
@@ -89,7 +129,7 @@ val_error_messages:
     INFO:
       - VAL_DESC:           "Key {k} val {v} is valid, but has no description"
       - VAL_CONVERTED:      "Key {k} val {vi} converted to {vf}"
-    ~:                      "Key {k} val {vi} is {ve}, {vo}"
+    ~:                      "Key {k} val {vi} is {e}, {vo}"
 
 ################################################################################
 #                             Key & Value Matching                             #

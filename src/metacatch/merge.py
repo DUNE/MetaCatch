@@ -10,6 +10,13 @@ from metacatch.config import ValidationError as VE
 
 # Merge functions for different types of metadata values
 
+def safe_sort(values):
+    """Sort a list of values, using string representation if values are not comparable"""
+    try:
+        return sorted(values)
+    except TypeError:
+        return sorted(values, key=repr)
+
 def strict_merge(values):
     """Merge values with strict equality, returning a conflict error if any values differ"""
     # Get the list of unique values
@@ -31,11 +38,7 @@ def strict_merge(values):
     # If we have multiple unique values, it is always a merge conflict
     errors |= VE.MRG_CONFLICT
     # Sort the unique values for consistent output, if possible
-    try:
-        unique.sort()
-    except TypeError:
-        unique.sort(key=repr) # Sort by string representation if values are not comparable
-    return unique, errors
+    return safe_sort(unique), errors
 
 def equal_merge(values):
     """Merge non-None values with strict equality, deleting the key if values differ"""
@@ -70,25 +73,28 @@ def equal_merge(values):
 def set_union(values):
     """Merge sets by taking the union of all values"""
     union = set(next(values))
+    first = set(union)
     for s in values:
         union.update(s)
-    return [union], VE(0)
+    return [union], VE(0) if union == first else VE.MRG_MODIFIED
 
 def set_intersection(values):
     """Merge sets by taking the intersection of all values"""
     intersect = set(next(values))
     union = set(intersect)
+    first = set(intersect)
     for s in values:
         intersect.intersection_update(s)
         union.update(s)
     missing = union - intersect
     if missing:
         return [intersect, missing], VE.MRG_SUBSET
-    return [intersect], VE(0)
+    return [intersect], VE(0) if intersect == first else VE.MRG_MODIFIED
 
 def dict_union(values):
     """Merge dictionaries by taking the union of all keys with matching values"""
-    result = copy.deepcopy(next(values))
+    first = next(values)
+    result = copy.deepcopy(first)
     collisions = {}
     for d in values:
         for k, v in d.items():
@@ -100,12 +106,16 @@ def dict_union(values):
             elif result[k] != v:
                 collisions[k] = [result.pop(k), copy.deepcopy(v)]
     if collisions:
-        return [result, {k: sorted(v) for k, v in collisions.items()}], VE.MRG_CONFLICT
-    return [result], VE(0)
+        # Sort the collision values for consistent output, if possible
+        for vals in collisions.values():
+            safe_sort(vals)
+        return [result, collisions], VE.MRG_CONFLICT | VE.MRG_SUBSET
+    return [result], VE(0) if result == first else VE.MRG_MODIFIED
 
 def dict_intersection(values):
     """Merge dictionaries by taking the intersection of all keys with matching values"""
-    result = copy.deepcopy(next(values))
+    first = next(values)
+    result = copy.deepcopy(first)
     missing = defaultdict(list)
     for next_dict in values:
         # Remove keys that are in the result but missing from the next dictionary
@@ -121,8 +131,11 @@ def dict_intersection(values):
             elif result[key] != val:
                 missing[key] = [result.pop(key), copy.deepcopy(val)]
     if missing:
-        return [result, {k: sorted(v) for k, v in missing.items()}], VE.MRG_SUBSET
-    return [result], VE(0)
+        # Sort the missing values for consistent output, if possible
+        for vals in missing.values():
+            safe_sort(vals)
+        return [result, missing], VE.MRG_SUBSET
+    return [result], VE(0) if result == first else VE.MRG_MODIFIED
 
 # Allowed merging methods for different types of metadata values
 MERGE_METHODS = {
@@ -179,10 +192,11 @@ class IterTracker:
         self.missing = False
         self.empty = True
         # Get the first item from the iterable to determine if it is empty
-        if (first := next(self, None)) is not None:
+        self.first = next(self, None)
+        if self.first is not None:
             self.empty = False
             # Put the first item back into the iterable for future iterations
-            self.iterable = itertools.chain([first], self.iterable)
+            self.iterable = itertools.chain([self.first], self.iterable)
 
     @property
     def errors(self):
@@ -217,6 +231,8 @@ def typed_merge(merge_func: Callable, values: Iterable) -> tuple:
         return [], VE.MRG_MISSING
     # Run the merge function on the good values
     result, errors = merge_func(values)
+    if result != values.first:
+        errors |= VE.MRG_MODIFIED
     # Add iteration error flags and return
     return result, errors | values.errors
 

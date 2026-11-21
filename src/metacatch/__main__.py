@@ -248,6 +248,8 @@ def write(destination: str, data: dict, force: bool = False):
                 return
         print(f"Overwriting existing file {destination}")
     else:
+        # Create the output directory if it doesn't exist
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
         print(f"Writing fixed metadata to {destination}")
     with open(destination, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2)
@@ -279,17 +281,18 @@ def main():
     fix = bool(outputs) or bool(merge)
 
     # Process input files
+    max_severity = ES.NONE
     for name, data in inputs.items():
         config.log(f"Procesing input {name}:")
-        config.log(f"File Data: {json.dumps(data, indent=2)}")
         errors = validation.validate_file(data, fix, defaults=defaults, overrides=overrides)
-        max_severity = errors[0][0] if errors else ES.NONE
+        severity = errors[0][0] if errors else ES.NONE
+        max_severity = max(max_severity, severity)
         # If we are merging then skip individual reports unless there are critical errors
-        if max_severity != ES.CRITICAL and merge and not outputs:
+        if severity != ES.CRITICAL and merge and not outputs:
             continue
         # Print validation errors
-        msg = VALIDATION_STATUS[max_severity]
-        if max_severity < config.VERBOSITY:
+        msg = VALIDATION_STATUS[severity]
+        if severity < config.VERBOSITY:
             print(f"File {name} {msg}!")
         else:
             print(f"File {name} {msg}:")
@@ -298,9 +301,34 @@ def main():
                     break
                 config.log(message, sev)
         # Save fixed metadata
-        if outputs and max_severity != ES.CRITICAL:
+        if outputs and severity != ES.CRITICAL:
             write(outputs[name], data, force=args.force)
 
     # Merge metadata if requested
     if merge:
-        config.log("Generating merged metadata")
+        if max_severity == ES.CRITICAL:
+            config.log("Skipping merge due to critical errors in input files!", ES.CRITICAL)
+            sys.exit(1)
+        if not merge.lower().endswith('.json'):
+            merge += '.json'
+        basename = os.path.basename(merge)[:-5]
+        if not basename:
+            config.log(f"Invalid merge output base name: {basename}", ES.CRITICAL)
+            sys.exit(1)
+        config.log(f"Merging metadata from {len(inputs)} input files into {basename}")
+        ordered_inputs = sorted(inputs.values(), key=lambda d: d['name'])
+        # Do the merge and report any errors
+        merged_file, errors = validation.merge_files(ordered_inputs, basename)
+        severity = errors[0][0] if errors else ES.NONE
+        msg = VALIDATION_STATUS[severity]
+        if severity < config.VERBOSITY:
+            print(f"Merged file {merge} {msg}!")
+        else:
+            print(f"File {merge} {msg}:")
+            for sev, message in errors:
+                if sev < config.VERBOSITY:
+                    break
+                config.log(message, sev)
+        # Save fixed metadata
+        if severity != ES.CRITICAL:
+            write(merge, merged_file, force=args.force)
