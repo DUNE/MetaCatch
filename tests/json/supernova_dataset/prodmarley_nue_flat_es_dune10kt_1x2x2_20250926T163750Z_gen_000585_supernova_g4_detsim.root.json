@@ -1,0 +1,245 @@
+{
+    "checksums": {
+        "adler32": "8630f7ab"
+    },
+    "children": [
+        {
+            "fid": "0Mxfe02IRk6QDOGC",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251110T171018Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "1X1zQRjiS8GX843C",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v7_l000020_20260322T214805__tps.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "2jq9Ya4ZQhmJEms3",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__GRID-TRGSIM_ES_v6_l001000_c0_20260307T025203__tuple.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "4crXqCNlSG6ya6Tx",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l2500_202511111537_hists_merged_20251112T005541_f5.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "5oHtz4qKRFyHrep8",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251107T114006Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "aTQRWGTzTeSF9GPL",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251103T130806Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "chiJBrm3S8CApyCg",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l20_hists_merged_20251110T214512.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "ebWHlkgZTcecupf2",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__smerge-skip__lmerge-limit__triggerana_2__ntuple__triggerana_2_20251115T212330_c10.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "FuNmbQXYQ5KzzaNP",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251017T084815Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "G9cydti7TUmwkfac",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251105T095416Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "ghOly3N7SNK2hlCn",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251103T162215Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Gnk060aqSyGHOAYz",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251017T094821Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "h4iwhejyQIyc2S4W",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251110T185511_f0.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "HaLQtSStSe6cm1pO",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l20000_hists_merged_20251110T222923_f10.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Hkg7LWN6R4ulZSuw",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251104T140459Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "HO6GLjTWRJuUTZNq",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251016T191328Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "hqiK8XoVTrS5OHEG",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251016T130814Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "iD7sarI2RTWkgvrj",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_v10_12_01d01_s0_l10000_triggerana_0_ntuple_triggerana_0_20251114T202412_c10.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "ijCK4kmJTcGR6506",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251031T154237Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "KTT0QK9CShm3Rcc0",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251106T210804Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "lemNUGWhTQKxLTsr",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251104T104643Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "lKbFQEhgSxCemTrT",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__s0__l10000_merged_triggerana_3_stage2_batch_20251116T024309.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "lZSkjGq9QGOzUNKy",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251110T191801_f2.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "oLmLfUgvSwKdgS9z",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251016T161332Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Olrqh0LKQuqrpUFL",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl.trg_mc_2025a.detsim_dune10kt_1x2x2_notpcsigproc.fcl.detsim_v10_06_00d01.triggerana_dune10kt_1x2x2.fcl.v10_12_01d01.smerge.skip.lmerge.limit_ntuple_triggerana_1_20251115T162547_c10.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "or4iEP9ARFiKsxzx",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251105T135936Z_reco.root",
+            "namespace": "fardet-hd"
+        },
+        {
+            "fid": "pHs0LKH6RFyOBz2z",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251113T182708_f10.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "QNDzsbsITfCuqvXy",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251017T093439Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "QyvrNCRyTyqBhWwv",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v8_l000020_20260324T204646__tpstream.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "RQzIY5P5RDGaBcPi",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v9_l000020_20260409T160224__tpstream.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "S3xMkkq9QYq8vkd3",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__s0__l10000__ntuple__triggerana_3_20251116T003822_c10.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "WkZJq4OHS0ClhbfZ",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251103T103917Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "YVz7K12zRGuNb5VT",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim_20251105T121643Z_reco.root",
+            "namespace": "usertests"
+        }
+    ],
+    "created_timestamp": 1758905687.176897,
+    "creator": "dunepro",
+    "fid": "014IGRZxSVqKAQIm",
+    "metadata": {
+        "art.file_format_era": "ART_2011a",
+        "art.file_format_version": 15,
+        "art.first_event": 29201,
+        "art.last_event": 29250,
+        "art.process_name": "detsim",
+        "art.run_type": "fardet-hd",
+        "core.application": "art.detsim",
+        "core.application.family": "art",
+        "core.application.name": "detsim",
+        "core.application.version": "v10_06_00d01",
+        "core.data_stream": "out1",
+        "core.data_tier": "detector-simulated",
+        "core.end_time": 1758905652.0,
+        "core.event_count": 50,
+        "core.file_format": "artroot",
+        "core.file_type": "mc",
+        "core.first_event_number": 29201,
+        "core.group": "dune",
+        "core.last_event_number": 29250,
+        "core.run_type": "fardet-hd",
+        "core.runs": [
+            8106
+        ],
+        "core.runs_subruns": [
+            810600000
+        ],
+        "core.start_time": 1758904975.0,
+        "dune.campaign": "trg_mc_2025a",
+        "dune.config_file": "detsim_dune10kt_1x2x2_notpcsigproc.fcl",
+        "dune.output_status": "confirmed",
+        "dune.requestid": "ritm2469557",
+        "dune.user": "dunepro",
+        "dune.workflow": {
+            "cpuinfo": "Intel(R) Xeon(R) Gold 5120 CPU @ 2.20GHz",
+            "hostname": "n149.dur.scotgrid.ac.uk",
+            "job_id": "207322.90@dunegpschedd02.fnal.gov",
+            "jobscript_cpu_seconds": 979,
+            "jobscript_finish": 1758905655,
+            "jobscript_max_rss_bytes": 1700933632,
+            "jobscript_real_seconds": 988,
+            "jobscript_start": 1758904667,
+            "os_release": "Scientific Linux release 7.9 (Nitrogen)",
+            "site_name": "UK_Durham",
+            "stage_id": 1,
+            "user": "epennacc@fnal.gov",
+            "workflow_id": 8106
+        },
+        "dune_mc.detector_type": "fardet-hd",
+        "dune_mc.electron_lifetime": "10.4",
+        "dune_mc.gen_fcl_filename": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl",
+        "dune_mc.generators": "marley",
+        "dune_mc.geometry_version": "dune10kt_v6_refactored_1x2x2.gdml",
+        "dune_mc.liquid_flow": "no",
+        "dune_mc.rawdigits": "yes",
+        "dune_mc.space_charge": "no",
+        "origin.applications.config_files": {
+            "g4_stage1": "supernova_g4_dune10kt_1x2x2.fcl",
+            "gen": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl"
+        }
+    },
+    "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T163750Z_gen_000585_supernova_g4_detsim.root",
+    "namespace": "fardet-hd",
+    "parents": [],
+    "retired": false,
+    "retired_by": null,
+    "retired_timestamp": null,
+    "size": 3026123922,
+    "updated_by": "dunepro",
+    "updated_timestamp": 1758905849.86463
+}

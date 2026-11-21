@@ -1,0 +1,255 @@
+{
+    "checksums": {
+        "adler32": "1c5cac9e"
+    },
+    "children": [
+        {
+            "fid": "1X1zQRjiS8GX843C",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v7_l000020_20260322T214805__tps.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "2jq9Ya4ZQhmJEms3",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__GRID-TRGSIM_ES_v6_l001000_c0_20260307T025203__tuple.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "5dUCX6GqQwSXlNww",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_v10_12_01d01_s0_l10000_triggerana_0_ntuple_triggerana_0_20251114T202412_c17.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "5KKhszqqT0O2qi9X",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l2500_202511111537_hists_merged_20251112T005541_f7.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "5VFconR2R36RIsSv",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251103T161201Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "892mWzjaSAyFlCJL",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__s0__l10000__ntuple__triggerana_3_20251116T003822_c17.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Ayo1CqB7RoqVUhJd",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251107T114004Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Bgsw0WZQRq2KWHhg",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251016T124308Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "CeCTCPivSDKuJg6k",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251103T103255Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "chiJBrm3S8CApyCg",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l20_hists_merged_20251110T214512.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "dA6AFaIxTOm536cp",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251104T140053Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "ecsYYhM4TYmyLn6l",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251113T182708_f17.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "EMA1j511TnKlFNw1",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251017T094811Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "EnEzzjd2QnikSDiX",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251017T093436Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "FDow4VaTT3q6RBR9",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251031T145853Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "fyQBk7seTz6Hm5OM",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251104T104250Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "GMsV8VNXRdKMxLFp",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251110T191801_f3.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "h4iwhejyQIyc2S4W",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251110T185511_f0.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Hb0EDxFARTmiL9mD",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251105T094825Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "iTUb1aZ6TmCa4XLT",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251106T210803Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "JhgTMpMLSlKzxym1",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251106T170423Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "jptan1QtSC2TXkB9",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251016T191317Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "KzBTWACiS52yHEJh",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251103T130818Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "lE3bvDSPS4yS7VSR",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l20000_hists_merged_20251110T222923_f17.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "lKbFQEhgSxCemTrT",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__s0__l10000_merged_triggerana_3_stage2_batch_20251116T024309.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "MGfAGaOtTbu6CD2v",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251103T110103Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "p89NeHlvQOaUoAps",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251017T084803Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "pha0YNB7SOiNCru0",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251105T120839Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "QyvrNCRyTyqBhWwv",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v8_l000020_20260324T204646__tpstream.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "RQzIY5P5RDGaBcPi",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v9_l000020_20260409T160224__tpstream.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Rz9VOm6SSTW8kHl8",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251031T154233Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "SCzo4m7qSk2xF15l",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__smerge-skip__lmerge-limit__triggerana_2__ntuple__triggerana_2_20251115T212330_c17.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "T3hieOWhSHGra7Ql",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251105T135424Z_reco.root",
+            "namespace": "fardet-hd"
+        },
+        {
+            "fid": "whin7F0xSHeNfpSP",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim_20251016T161327Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "Z4HZi58jRNCtoJWV",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl.trg_mc_2025a.detsim_dune10kt_1x2x2_notpcsigproc.fcl.detsim_v10_06_00d01.triggerana_dune10kt_1x2x2.fcl.v10_12_01d01.smerge.skip.lmerge.limit_ntuple_triggerana_1_20251115T162547_c17.root",
+            "namespace": "usertests"
+        }
+    ],
+    "created_timestamp": 1758906608.311316,
+    "creator": "dunepro",
+    "fid": "00ZWhhtXRbqx0cRf",
+    "metadata": {
+        "art.file_format_era": "ART_2011a",
+        "art.file_format_version": 15,
+        "art.first_event": 61651,
+        "art.last_event": 61700,
+        "art.process_name": "detsim",
+        "art.run_type": "fardet-hd",
+        "core.application": "art.detsim",
+        "core.application.family": "art",
+        "core.application.name": "detsim",
+        "core.application.version": "v10_06_00d01",
+        "core.data_stream": "out1",
+        "core.data_tier": "detector-simulated",
+        "core.end_time": 1758906569.0,
+        "core.event_count": 50,
+        "core.file_format": "artroot",
+        "core.file_type": "mc",
+        "core.first_event_number": 61651,
+        "core.group": "dune",
+        "core.last_event_number": 61700,
+        "core.run_type": "fardet-hd",
+        "core.runs": [
+            8106
+        ],
+        "core.runs_subruns": [
+            810600000
+        ],
+        "core.start_time": 1758906040.0,
+        "dune.campaign": "trg_mc_2025a",
+        "dune.config_file": "detsim_dune10kt_1x2x2_notpcsigproc.fcl",
+        "dune.output_status": "confirmed",
+        "dune.requestid": "ritm2469557",
+        "dune.user": "dunepro",
+        "dune.workflow": {
+            "cpuinfo": "AMD EPYC 7763 64-Core Processor",
+            "hostname": "dune001-7848196.0-lcg2633.gridpp.rl.ac.uk",
+            "job_id": "212890.173@dunegpschedd01.fnal.gov",
+            "jobscript_cpu_seconds": 870,
+            "jobscript_finish": 1758906574,
+            "jobscript_max_rss_bytes": 1666584576,
+            "jobscript_real_seconds": 914,
+            "jobscript_start": 1758905659,
+            "os_release": "Scientific Linux release 7.9 (Nitrogen)",
+            "site_name": "UK_RAL-Tier1",
+            "stage_id": 1,
+            "user": "epennacc@fnal.gov",
+            "workflow_id": 8106
+        },
+        "dune_mc.detector_type": "fardet-hd",
+        "dune_mc.electron_lifetime": "10.4",
+        "dune_mc.gen_fcl_filename": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl",
+        "dune_mc.generators": "marley",
+        "dune_mc.geometry_version": "dune10kt_v6_refactored_1x2x2.gdml",
+        "dune_mc.liquid_flow": "no",
+        "dune_mc.rawdigits": "yes",
+        "dune_mc.space_charge": "no",
+        "origin.applications.config_files": {
+            "g4_stage1": "supernova_g4_dune10kt_1x2x2.fcl",
+            "gen": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl"
+        }
+    },
+    "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T165427Z_gen_001234_supernova_g4_detsim.root",
+    "namespace": "fardet-hd",
+    "parents": [],
+    "retired": false,
+    "retired_by": null,
+    "retired_timestamp": null,
+    "size": 3027359638,
+    "updated_by": "dunepro",
+    "updated_timestamp": 1758906694.042296
+}

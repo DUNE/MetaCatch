@@ -1,0 +1,260 @@
+{
+    "checksums": {
+        "adler32": "0a0cd12f"
+    },
+    "children": [
+        {
+            "fid": "137p4IbMQu6rAEQ8",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251017T093406Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "1FAb23AuTOmzjEmW",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l20000_hists_merged_20251110T222923_f27.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "1X1zQRjiS8GX843C",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v7_l000020_20260322T214805__tps.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "2gWxSaxXQDetXP0e",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_v10_12_01d01_s0_l10000_triggerana_0_ntuple_triggerana_0_20251114T202412_c27.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "2jq9Ya4ZQhmJEms3",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__GRID-TRGSIM_ES_v6_l001000_c0_20260307T025203__tuple.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "2vrF7JjJSRGmZs6Z",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251113T182708_f27.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "3mGl27X5RVidbWVp",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251016T124306Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "5aDVJ1hKQnyIih3h",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251016T191317Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "7aFDYp5gSlGSFKK5",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251107T114003Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "cCWzh9u2ReGIUrq4",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251103T125934Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "ce1VSRpSQkKNYonM",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251031T154220Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "chiJBrm3S8CApyCg",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l20_hists_merged_20251110T214512.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "cK4eQJn2SYimHtvG",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251110T191801_f5.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "DXUa1DCSSB2o04A9",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251031T145847Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "gPrVzmeqRu2OzJGf",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251105T094300Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "GqTjpNv3T6CsY1i9",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251017T084801Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "h4iwhejyQIyc2S4W",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_hists_merged_20251110T185511_f0.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "iRy1s3g9SR6gDN79",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251105T134914Z_reco.root",
+            "namespace": "fardet-hd"
+        },
+        {
+            "fid": "jENT34VVR7ekLWXL",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251103T115450Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "LCU3P4ggSKq1ZvMl",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251104T103902Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "LIW3h03WSPqny5k8",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251017T094811Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "lKbFQEhgSxCemTrT",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__s0__l10000_merged_triggerana_3_stage2_batch_20251116T024309.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "MtNZVIg8Sky5qVh5",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251103T102633Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "nfw6VCzZTjW2No8N",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl_trg_mc_2025a_detsim_dune10kt_1x2x2_notpcsigproc.fcl_detsim_v10_06_00d01_triggerana_dune10kt_1x2x2.fcl_s0_l2500_202511111537_hists_merged_20251112T005541_f12.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "nFww9tPWRgqnzDSq",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251016T161326Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "p7oc8L7nS8aZwSqS",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251105T120228Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "PduF0AlwQPao5Cnu",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251103T105439Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "QyvrNCRyTyqBhWwv",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v8_l000020_20260324T204646__tpstream.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "rncfW0P0T4O9kE40",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251103T113304Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "RQzIY5P5RDGaBcPi",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__detsim_dune10kt_1x2x2_notpcsigproc__v10_06_00d01__v10_12_01d01__triggerana_tree_1x2x2_simpleThr_production__TRGSIM_ES_v9_l000020_20260409T160224__tpstream.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "slQMPgXmSkmRZ0Ih",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251103T161201Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "tWS1Q41DS2OOzlMI",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251106T210802Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "UDk5ZaWiSDaz1Pnj",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__s0__l10000__ntuple__triggerana_3_20251116T003822_c27.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "VchhTTWAQAO9TCUw",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2__trg_mc_2025a__detsim_dune10kt_1x2x2_notpcsigproc__detsim__v10_06_00d01__triggerana_dune10kt_1x2x2__v10_12_01d01__smerge-skip__lmerge-limit__triggerana_2__ntuple__triggerana_2_20251115T212330_c27.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "X9QymOpzTUOUguqR",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim_20251104T135643Z_reco.root",
+            "namespace": "usertests"
+        },
+        {
+            "fid": "XzCZmaaiQUeGcg06",
+            "name": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl.trg_mc_2025a.detsim_dune10kt_1x2x2_notpcsigproc.fcl.detsim_v10_06_00d01.triggerana_dune10kt_1x2x2.fcl.v10_12_01d01.smerge.skip.lmerge.limit_ntuple_triggerana_1_20251115T162547_c27.root",
+            "namespace": "usertests"
+        }
+    ],
+    "created_timestamp": 1758907459.479145,
+    "creator": "dunepro",
+    "fid": "00lZDodbQPicMVFc",
+    "metadata": {
+        "art.file_format_era": "ART_2011a",
+        "art.file_format_version": 15,
+        "art.first_event": 114001,
+        "art.last_event": 114050,
+        "art.process_name": "detsim",
+        "art.run_type": "fardet-hd",
+        "core.application": "art.detsim",
+        "core.application.family": "art",
+        "core.application.name": "detsim",
+        "core.application.version": "v10_06_00d01",
+        "core.data_stream": "out1",
+        "core.data_tier": "detector-simulated",
+        "core.end_time": 1758907143.0,
+        "core.event_count": 50,
+        "core.file_format": "artroot",
+        "core.file_type": "mc",
+        "core.first_event_number": 114001,
+        "core.group": "dune",
+        "core.last_event_number": 114050,
+        "core.run_type": "fardet-hd",
+        "core.runs": [
+            8106
+        ],
+        "core.runs_subruns": [
+            810600000
+        ],
+        "core.start_time": 1758906799.0,
+        "dune.campaign": "trg_mc_2025a",
+        "dune.config_file": "detsim_dune10kt_1x2x2_notpcsigproc.fcl",
+        "dune.output_status": "confirmed",
+        "dune.requestid": "ritm2469557",
+        "dune.user": "dunepro",
+        "dune.workflow": {
+            "cpuinfo": "AMD EPYC 7543 32-Core Processor",
+            "hostname": "dunegli-7025965-0-fnpc22022.fnal.gov",
+            "job_id": "207349.48@dunegpschedd02.fnal.gov",
+            "jobscript_cpu_seconds": 480,
+            "jobscript_finish": 1758907144,
+            "jobscript_max_rss_bytes": 1700700160,
+            "jobscript_real_seconds": 512,
+            "jobscript_start": 1758906631,
+            "os_release": "Scientific Linux release 7.9 (Nitrogen)",
+            "site_name": "US_FNAL-FermiGrid",
+            "stage_id": 1,
+            "user": "epennacc@fnal.gov",
+            "workflow_id": 8106
+        },
+        "dune_mc.detector_type": "fardet-hd",
+        "dune_mc.electron_lifetime": "10.4",
+        "dune_mc.gen_fcl_filename": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl",
+        "dune_mc.generators": "marley",
+        "dune_mc.geometry_version": "dune10kt_v6_refactored_1x2x2.gdml",
+        "dune_mc.liquid_flow": "no",
+        "dune_mc.rawdigits": "yes",
+        "dune_mc.space_charge": "no",
+        "origin.applications.config_files": {
+            "g4_stage1": "supernova_g4_dune10kt_1x2x2.fcl",
+            "gen": "prodmarley_nue_flat_es_dune10kt_1x2x2.fcl"
+        }
+    },
+    "name": "prodmarley_nue_flat_es_dune10kt_1x2x2_20250926T171033Z_gen_002281_supernova_g4_detsim.root",
+    "namespace": "fardet-hd",
+    "parents": [],
+    "retired": false,
+    "retired_by": null,
+    "retired_timestamp": null,
+    "size": 3026821105,
+    "updated_by": "dunepro",
+    "updated_timestamp": 1758907806.558249
+}
