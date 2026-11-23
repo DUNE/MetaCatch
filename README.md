@@ -19,7 +19,10 @@ The "metacatch" command will run client-side validation on a list of inputs.  In
 
 MetaCatch may run in three different modes:
   - By default, MetaCatch will simply report any errors or warnings, and suggest potential fixes if possible.
-  - The "--fix [<pattern>]" argument will make MetaCatch attempt to automatically fix any problems it detects.  The result
+  - The "--fix [\<pattern\>]" argument will make MetaCatch attempt to automatically fix any problems it detects, outputting the result to JSON files.  The provided pattern will be used to generate appropriate output filenames, and can use {path} to get the path of local input files or {namespace} and {name} to refer to the corresponding field in the file dictionaries.  This may fail for inputs with critical validation errors.
+  - The "--merge \<file\> argument will make MetaCatch attempt to merge the metadata from all the input files, applying any fixes in the process.  The output will be written to the specified file, which should be of the form "directory/filename.ext.json" where "filename.ext" is the name of the merged data file.  Again, this may fail if any input files have critical validation errors.
+
+The user may also provide "default" and "override" metadata values, as either JSON files or inline JSON.  The default values will be used to populate any missing metadata keys, while the override values will be set whether or not the key exists in the input.  Overriding a key to null is interpreted as deleting the key.
 
 ```
 usage: metacatch [options] <input> [<input> ...]
@@ -46,6 +49,13 @@ options:
 ```
 
 ## Server-Side MetaData Validation
+
+The MetaCat server-side validation does not use the MetaCatch metadata specification directly, instead it uses a separate set of validation rules stored in the database.  This means that any updates to the specification need to be manually uploaded to the server to take effect.  
+
+MetaCatch therefore also includes a "metacatch-sync" command, which will check for differences between the client-side and server-side specs and optionally upload any changes to the server.  It can currently run in three different modes:
+  - minimal: Only includes required keys, all categories set to unrestricted
+  - basic:   Only includes keys with full definitions, all categories set to unrestricted
+  - full:    Includes all known keys, categories set to restricted by default
 
 ```
 usage: metacatch-sync [-h] {minimal,basic,full}
