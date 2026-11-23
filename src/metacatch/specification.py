@@ -5,7 +5,7 @@ import re
 from collections import defaultdict, ChainMap
 from metacatch import config, keytypes, expression, fuzzy
 from metacatch.keytypes import KeyType
-from metacatch.config import ValidationError as VE
+from metacatch.config import EF
 
 categories = {}
 conditions = {}
@@ -181,9 +181,9 @@ class KeySpec:
     def __init__(self, spec: dict|None = None):
         if spec is None:
             spec = {}
-            self.status = VE.KEY_UNKNOWN
+            self.status = EF.KEY_UNKNOWN
         elif not spec:
-            self.status = VE.KEY_UNSPECIFIED | VE.KEY_DEPRECATED
+            self.status = EF.KEY_SPEC | EF.KEY_DEPRECATED
         else:
             self.set_status(spec.get("status", "current"))
         self.description: str = spec.get("description", "")
@@ -213,9 +213,9 @@ class KeySpec:
     def set_status(self, status: str):
         """Set the status of the key"""
         statuses = {
-            "current": VE(0),
-            "deprecated": VE.KEY_DEPRECATED,
-            "retired": VE.KEY_RETIRED
+            "current": EF.NONE,
+            "deprecated": EF.KEY_DEPRECATED,
+            "retired": EF.KEY_RETIRED
         }
         if (flag := statuses.get(status.lower(), None)) is None:
             raise SpecError(f"Invalid status '{status}': must be one of {list(statuses.keys())}")
@@ -224,22 +224,22 @@ class KeySpec:
     @property
     def current(self):
         """Return True if the key is current"""
-        return not self.status & (VE.KEY_DEPRECATED | VE.KEY_RETIRED)
+        return not self.status & (EF.KEY_DEPRECATED | EF.KEY_RETIRED)
 
     @property
     def deprecated(self):
         """Return True if the key is deprecated"""
-        return self.status & VE.KEY_DEPRECATED
+        return self.status & EF.KEY_DEPRECATED
 
     @property
     def retired(self):
         """Return True if the key is retired"""
-        return self.status & VE.KEY_RETIRED
+        return self.status & EF.KEY_RETIRED
 
     @property
     def unknown(self):
         """Return True if the key is unknown"""
-        return self.status & VE.KEY_UNKNOWN
+        return self.status & EF.KEY_UNKNOWN
 
     @property
     def absolute(self):
@@ -301,33 +301,33 @@ class KeySpec:
         except TypeError:
             return None
 
-    def convert(self, value) -> tuple[list, VE]:
+    def convert(self, value) -> tuple[list, EF]:
         """Convert a value to the key's type, if possible"""
         try:
             converted = self.type.convert(value)
         except ValueError:
-            return [], VE.VAL_TYPE
+            return [], EF.VAL_TYPE
         # If the converted value is unchanged, return without any error flags
         if converted == value and type(converted) == type(value):
-            return [converted], VE(0)
+            return [converted], EF.NONE
         # Flag that the value was converted, and check if it was a type error
-        errors = VE.VAL_CONVERTED
+        errors = EF.VAL_CONVERTED
         if not self.type.check(value):
-            errors |= VE.VAL_TYPE
+            errors |= EF.VAL_TYPE
         return [converted], errors
 
-    def check(self, value) -> tuple[list, VE]:
+    def check(self, value) -> tuple[list, EF]:
         """Check if a value is valid for the key"""
         # First check for any known fixes for the value
         if (fixed := self.fix(value)) is not None:
-            return [fixed], VE.VAL_REPLACED
+            return [fixed], EF.VAL_REPLACED
         # Then check the type of the value
         converted, errors = self.convert(value)
         if not converted:
             return [], errors
         # Check the known fixes again for the converted value
         if (fixed := self.fix(converted[0])) is not None:
-            return [fixed], errors | VE.VAL_REPLACED
+            return [fixed], errors | EF.VAL_REPLACED
         # Otherwise, return the converted value and any error flags
         return converted, errors
 
@@ -335,7 +335,7 @@ class KeySpec:
         """Deconvert a value from the key's type to a JSON-serializable type"""
         return self.type.deconvert(value)
 
-    def merge(self, values) -> tuple[list, VE]:
+    def merge(self, values) -> tuple[list, EF]:
         """Merge a list of values for the key using the key's merge method"""
         return self.type.merge(values)
 
@@ -393,7 +393,7 @@ class BoolKeySpec(KeySpec):
         else:
             self.true, self.false = values[1], values[0]
         # Flag that the key has custom values and needs to be deconverted
-        self.status |= VE.VAL_CONVERTED
+        self.status |= EF.VAL_CONVERTED
 
     @property
     def options(self) -> list:
@@ -419,18 +419,18 @@ class BoolKeySpec(KeySpec):
         out["values"] = {self.true, self.false}
         return out
 
-    def check(self, value) -> tuple[list, VE]:
+    def check(self, value) -> tuple[list, EF]:
         """Check if a value is valid for the key"""
         # Check for actual boolean values or the custom true/false values
         if value is True or value == self.true:
-            return [True], VE(0) if self.true is True else VE.VAL_CONVERTED
+            return [True], EF.NONE if self.true is True else EF.VAL_CONVERTED
         if value is False or value == self.false:
-            return [False], VE(0) if self.false is False else VE.VAL_CONVERTED
+            return [False], EF.NONE if self.false is False else EF.VAL_CONVERTED
         # Check for any known fixes for the value
         if (fixed := self.fix(value)) is not None:
-            return [fixed], VE.VAL_REPLACED
+            return [fixed], EF.VAL_REPLACED
         # Try to convert the value to a boolean
-        return self.convert(value)[0], VE.VAL_TYPE
+        return self.convert(value)[0], EF.VAL_TYPE
 
     def deconvert(self, value):
         """Deconvert a value from the key's type to a JSON-serializable type"""
@@ -498,7 +498,7 @@ class OptionKeySpec(KeySpec):
         out["values"] = self.val_options.keys() | self.old_options.keys()
         return out
 
-    def check(self, value) -> tuple[list, VE]:
+    def check(self, value) -> tuple[list, EF]:
         """Check if the value is valid according to the key's specification"""
         # Do standard type checking and conversion
         vals, errors = super().check(value)
@@ -508,16 +508,16 @@ class OptionKeySpec(KeySpec):
         value = vals[0]
         # If the value is retired, suggest the list of valid options
         if value in self.bad_options:
-            return self.options, errors | VE.VAL_RETIRED
+            return self.options, errors | EF.VAL_RETIRED
         # If the value is valid or deprecated, return the appropriate error flag
-        for opts, err in [(self.val_options, VE(0)), (self.old_options, VE.VAL_DEPRECATED)]:
+        for opts, err in [(self.val_options, EF.NONE), (self.old_options, EF.VAL_DEPRECATED)]:
             if value in opts:
                 return [value], errors | err
         # If the key is invalid, suggest valid or deprecated options using fuzzy matching
-        errors |= VE.VAL_INVALID
+        errors |= EF.VAL_INVALID
         good_opts = set(self.val_options) | set(self.old_options)
         matches = fuzzy.match(orig_val, good_opts)
-        for opts, err in [(self.val_options, VE(0)), (self.old_options, VE.VAL_DEPRECATED)]:
+        for opts, err in [(self.val_options, EF.NONE), (self.old_options, EF.VAL_DEPRECATED)]:
             vals = [v for v,_ in matches if v in opts]
             if vals:
                 return vals, errors | err
@@ -577,7 +577,7 @@ class ParamKeySpec(KeySpec):
             out["pattern"] = self.pattern
         return out
 
-    def check(self, value) -> tuple[list, VE]:
+    def check(self, value) -> tuple[list, EF]:
         """Check if the value is valid according to the key's specification"""
         # Do standard type checking and conversion
         vals, errors = super().check(value)
@@ -586,12 +586,12 @@ class ParamKeySpec(KeySpec):
         # Check if the value is within the min/max range
         val = vals[0]
         if self.min is not None and val < self.min:
-            return [self.min], errors | VE.VAL_MIN
+            return [self.min], errors | EF.VAL_MIN
         if self.max is not None and val > self.max:
-            return [self.max], errors | VE.VAL_MAX
+            return [self.max], errors | EF.VAL_MAX
         # Check if the value matches the regex pattern
         if self.pattern is not None and not re.fullmatch(self.pattern, val):
-            return [self.pattern], errors | VE.VAL_PATTERN
+            return [self.pattern], errors | EF.VAL_PATTERN
         # If we get here, the value passed all checks
         return [val], errors
 
@@ -652,8 +652,8 @@ def close_keys(key: str, value, init: str = "") -> list[tuple[str, int]]:
     for condition in [
         lambda m: not meta_keys[m].retired,             # retired keys
         lambda m: len(errs[m][0]) == 1,                 # unrecoverable values
-        lambda m: not errs[m][1] & VE.VAL_RETIRED,      # retired values
-        lambda m: not errs[m][1] & ~VE.VAL_DEPRECATED,  # value errors
+        lambda m: not errs[m][1] & EF.VAL_RETIRED,      # retired values
+        lambda m: not errs[m][1] & ~EF.VAL_DEPRECATED,  # value errors
         lambda m: meta_keys[m].current,                 # deprecated keys
         lambda m: not errs[m][1]                        # deprecated values
     ]:

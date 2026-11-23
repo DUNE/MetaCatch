@@ -12,7 +12,7 @@
 # Group error flags into classes for reporting and filtering
 error_groups:
     CRITICAL: ["MRG_CONFLICT"]
-    WARNING:  ["KEY_DEPRECATED", "KEY_UNKNOWN", "KEY_UNSPECIFIED", "VAL_DEPRECATED", "MRG_ORDERED"]
+    WARNING:  ["KEY_DEPRECATED", "KEY_UNKNOWN", "KEY_SPEC", "VAL_DEPRECATED", "MRG_ORDERED"]
     INFO:     ["KEY_DESC", "VAL_DESC", "VAL_CONVERTED", "MRG_MODIFIED"]
     DELETED:  ["KEY_RETIRED", "USR_DELETED", "MRG_DELETED"]
     UNFIXABLE: ["KEY_UNKNOWN", "KEY_RETIRED", "VAL_RETIRED"]
@@ -22,7 +22,8 @@ error_groups:
 #                                Error Messages                                #
 ################################################################################
 
-# For a given category and severity of error, the first message with matching flags will be used
+# For a given category and severity of error, the first message with matching flags will be used.
+# Multiple consecutive spaces are interpreted as a 'tab', and are used to align the message output.
 # The message may contain placeholders for the key, value, and other relevant information:
 #   Key Placeholders:
 #       {k}  - key name (including any reccomended changes)
@@ -49,87 +50,114 @@ error_groups:
 
 mrg_error_messages:
     CRITICAL:
-      - MRG_CONFLICT:   "Merging key {k} encountered conficting values {vs}"
+      - CONFLICT:   "{k}                Merge encountered conficting values {vs}"
     ERROR:
-      - MRG_MISSING:    "Merging key {k} encounted missing values"
+      - MISSING:    "{k}                Merge encountered missing values"
     FIX:
-      - MRG_DELETED:    "Deleted key {k} from merged files"
-      - MRG_SUBSET:     "Merged key {k} omitted some values: {v[1]}"
+      - DELETED:    "{k}                Deleted during merging"
+      - SUBSET:     "{k}                Merge omitted some values: {v[1]}"
     WARNING:
-      - MRG_ORDERED:    "Merged key {k} output depends on the order of input files"
+      - ORDERED:    "{k}                Merged output depends on input file order"
     INFO:
-      - MRG_MODIFIED:   "Merging key {k} modified values: {vi}(first file) -> {vf}(merged)"
-    ~:                  "Merging key {k} encountered errors: {me}"
+      - MODIFIED:   "{k}                Merge modified value to {vf}"
+    ~:              "{k}                Unhandled merging error(s): {me}"
 
 usr_error_messages:
     ERROR:
-      - USR_DELETED:    "Key {k} val {v} should be deleted by user override"
-      - USR_OVERRIDE:   "Key {k} val {vi} should be set to user override {vf}"
-      - USR_DEFAULT:    "Missing key {k} should be set to user default value {vf}"
+      - DELETED:    "{k} ({v})          Key should be deleted by user override"
+      - OVERRIDE:   "{k} ({vi})         Val should be set to user override {vf}"
+      - DEFAULT:    "{k} (missing)      Val should be set to user default value {vf}"
     FIX:
-      - USR_DELETED:    "Deleted key {k} val {v} by user override"
-      - USR_OVERRIDE:   "Set key {k} val {vi} to user override {vf}"
-      - USR_DEFAULT:    "Set missing key {k} to user default value {vf}"
-    ~:                  "Key {k} val {v} is {ue}"
+      - DELETED:    "{k} ({v})          Key deleted by user override"
+      - OVERRIDE:   "{k} ({vi})         Val set to user override {vf}"
+      - DEFAULT:    "{k} (missing)      Val set to user default {vf}"
+    ~:              "{k} ({v})          Unhandled user error(s): {ue}"
 
 key_error_messages:
     CRITICAL:
-      - KEY_REQUIRED|USR_DELETED:    "Deleted key {k} is required for {c} files!"
-      - KEY_REQUIRED|MRG_DELETED:    "Merging deleted key {k} required for {c} files!"
-      - KEY_REQUIRED:   "Missing key {k} is required for {c} files!"
-      - KEY_ILLEGAL:    "Key {ki} is malformed, {ko}"
-      - KEY_INVALID:    "Key {ki} is invalid, {ko}"
+      - REQUIRED|USR_DELETED:
+                    "{k} (user del)     Key is required for {c} files!"
+      - REQUIRED|MRG_DELETED:
+                    "{k} (mrg del)      Key is required for {c} files!"
+      - REQUIRED:   "{k} (missing)      Key is required for {c} files!"
+      - ILLEGAL:    "{ki}               Key name is illegal, {ko}"
+      - INVALID:    "{ki}               Key is invalid, {ko}"
     ERROR:
-      - KEY_REQUIRED:   "Missing key {k} required for {c} files (default value {v})"
-      - KEY_CONFLICT:   "Key {ki} val {vi} conflicts with replacement key {kf} val {vf}"
-      - KEY_REDUNDANT:  "Key {ki} is redundant with replacement key {kf}"
-      - KEY_ILLEGAL:    "Key {ki} is malformed, {ko}"
-      - KEY_RETIRED:    "Key {k} is retired: {kd}"
-      - KEY_REPLACED:   "Key {ki} is retired, use {kf} instead"
-      - KEY_INVALID:    "Key {ki} is invalid, {ko}"
-      - KEY_UNKNOWN:    "Key {ki} is unknown, {ko[1]}"
+      - REQUIRED:   "{k} (missing)      Key is required for {c} files (default {v})"
+      - CONFLICT:   "{ki} ({vi})        Key conflicts with replacement {kf} (val {vf})"
+      - REDUNDANT:  "{ki} ({vi})        Key is redundant with replacement {kf}"
+      - ILLEGAL:    "{ki}               Key name is illegal, {ko}"
+      - RETIRED:    "{k}                Key is retired: {kd}"
+      - REPLACED:   "{ki}               Key is retired, use {kf} instead"
+      - INVALID:    "{ki}               Key is invalid, {ko}"
+      - UNKNOWN:    "{ki}               Key is unknown, {ko[1]}"
     FIX:
-      - KEY_REQUIRED:   "Set missing key {k} to default value {v} (required for {c} files)"
-      - KEY_CONFLICT:   "Ignored redundant key {ki} in favor of {kf} with value {vf}"
-      - KEY_REDUNDANT:  "Ignored redundant key {ki} in favor of {kf}"
-      - KEY_ILLEGAL:    "Replaced malformed key {ki} -> {kf}"
-      - KEY_RETIRED:    "Deleted retired key {k}"
-      - KEY_REPLACED:   "Replaced retired key {ki} -> {kf}"
-      - KEY_INVALID:    "Replaced invalid key {ki} -> {kf}"
+      - REQUIRED:   "{k} (missing)      Val set to default {v} (required for {c} files)"
+      - CONFLICT:   "{ki} ({vi})        Key deleted, conflicts with {kf} (val {vf})"
+      - REDUNDANT:  "{ki} ({vi})        Key deleted, redundant with {kf}"
+      - ILLEGAL:    "{ki}               Key name is illegal, replaced with {kf}"
+      - RETIRED:    "{k}                Key is retired, deleted: {kd}"
+      - REPLACED:   "{ki}               Key is retired, replaced with {kf}"
+      - INVALID:    "{ki}               Key is invalid, replaced with {kf}"
     WARNING:
-      - KEY_UNSPECIFIED:    "Key {k} has no specification, it may be deprecated or invalid"
-      - KEY_DEPRECATED:     "Key {k} is deprecated: {kd}"
-      - KEY_UNKNOWN:        "Key {k} is unknown, are you sure it is correct?"
+      - SPEC:       "{k}                Key is deprecated (missing specification)"
+      - DEPRECATED: "{k}                Key is deprecated: {kd}"
+      - UNKNOWN:    "{k}                Key is unknown, are you sure it is correct?"
     INFO:
-      - KEY_DESC:           "Key {k} is valid, but has no description"
-    ~:                      "Key {ki} is {ke}, {ko}"
+      - DESC:       "{k}                Key is valid, but has no description"
+    ~:              "{ki}               Unhandled key error(s): {ke}, {ko}"
 
 val_error_messages:
     CRITICAL:
-      - VAL_INVALID:        "Key {k} val {vi} is invalid, {vo}"
-      - VAL_TYPE:           "Key {k} val {vi} is the wrong type, expected {t}"
-      - VAL_RETIRED|VAL_DESC: "Key {k} val {vi} is retired, {vo}"
-      - VAL_RETIRED:        "Key {k} val {vi} is retired: {vd}"
+      - INVALID:    "{k} ({vi})         Val is invalid, {vo}"
+      - TYPE:       "{k} ({vi})         Val has wrong type, expected {t}"
+      - RETIRED|DESC:
+                    "{k} ({vi})         Val is retired, {vo}"
+      - RETIRED:    "{k} ({vi})         Val is retired: {vd}"
     ERROR:
-      - VAL_REPLACED:       "Key {k} val {vi} is retired, use {vf} instead"
-      - VAL_RETIRED|VAL_DESC: "Key {k} val {vi} is retired, {vo}"
-      - VAL_RETIRED:        "Key {k} val {vi} is retired: {vd}"
-      - VAL_TYPE:           "Key {k} val {vi} is the wrong type, {vo}"
-      - VAL_INVALID:        "Key {k} val {vi} is invalid, {vo}"
-      - VAL_MIN:            "Key {k} val {vi} is below minimum value {vf}"
-      - VAL_MAX:            "Key {k} val {vi} is above maximum value {vf}"
+      - REPLACED:   "{k} ({vi})         Val is retired, use {vf} instead"
+      - RETIRED|DESC:
+                    "{k} ({vi})         Val is retired, {vo}"
+      - RETIRED:    "{k} ({vi})         Val is retired: {vd}"
+      - TYPE:       "{k} ({vi})         Val has wrong type, {vo}"
+      - INVALID:    "{k} ({vi})         Val is invalid, {vo}"
+      - MIN:        "{k} ({vi})         Val below minimum {vf}"
+      - MAX:        "{k} ({vi})         Val above maximum {vf}"
     FIX:
-      - VAL_REPLACED:       "Key {k} replaced retired val {vi} -> {vf}"
-      - VAL_TYPE:           "Key {k} replaced val of wrong type {vi} -> {vf}"
-      - VAL_INVALID:        "Key {k} replaced invalid val {vi} -> {vf}"
-      - VAL_MIN:            "Key {k} set val {vi} to minimum value {vf}"
-      - VAL_MAX:            "Key {k} set val {vi} to maximum value {vf}"
+      - REPLACED:   "{k} ({vi})         Val is retired, replaced with {vf}"
+      - TYPE:       "{k} ({vi})         Val has wrong type, replaced with {vf}"
+      - INVALID:    "{k} ({vi})         Val is invalid, replaced with {vf}"
+      - MIN:        "{k} ({vi})         Val clamped to minimum {vf}"
+      - MAX:        "{k} ({vi})         Val clamped to maximum {vf}"
     WARNING:
-      - VAL_DEPRECATED:     "Key {k} val {v} is deprecated: {vd}"
+      - DEPRECATED: "{k} ({vi})         Val is deprecated: {vd}"
     INFO:
-      - VAL_DESC:           "Key {k} val {v} is valid, but has no description"
-      - VAL_CONVERTED:      "Key {k} val {vi} converted to {vf}"
-    ~:                      "Key {k} val {vi} is {e}, {vo}"
+      - DESC:       "{k} ({v})          Val is valid, but has no description"
+      - CONVERTED:  "{k} ({vi})         Val converted to {vf}"
+    ~:              "{k} ({vi})         Unhandled val error(s): {ve}, {vo}"
+
+################################################################################
+#                             Printout Formatting                              #
+################################################################################
+
+# Settings for trying to fit messages into a given width
+field_widths:
+    default_width: 40
+    min_element_count: 1    # Display at least this many elements in a list/set/dict
+    min_string_width: 5     # Display at least this many characters at ends of a string
+
+colorization:
+    enabled: true           # Enable colorized output
+    fields:
+        files:      CYAN    # Color for file names
+        keys:       CYAN    # Color for keys
+        values:     WHITE   # Color for values
+    error_severities:
+        CRITICAL:   RED
+        ERROR:      YELLOW
+        FIX:        GREEN
+        WARNING:    BLUE
+        INFO:       CYAN
 
 ################################################################################
 #                             Key & Value Matching                             #

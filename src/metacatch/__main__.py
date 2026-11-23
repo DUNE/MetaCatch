@@ -7,19 +7,10 @@ import re
 import argparse
 import metacat.webapi as metacat #pylint: disable=import-error
 from metacatch import config, validation
-from metacatch.config import ErrorSeverity as ES
+from metacatch.config import ES, Formatter
 
 PATH_REGEX = r'[A-Za-z0-9_/\-]*\.[A-Za-z0-9]*'
 DID_REGEX = r'[A-Za-z0-9_.\-]*:[A-Za-z0-9_.\-]*\.[A-Za-z0-9]*'
-
-VALIDATION_STATUS = {
-    ES.NONE:        "passed validation",
-    ES.INFO:        "passed validation",
-    ES.WARNING:     "passed validation with warnings",
-    ES.FIX:         "passed validation after fixes",
-    ES.ERROR:       "had non-critical errors in validation",
-    ES.CRITICAL:    "failed validation with crital errors",
-}
 
 def get_parser() -> argparse.ArgumentParser:
     """Set up the command line argument parser."""
@@ -41,6 +32,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument('-q', '--quiet', action='count', default=0,
                         help='suppress output (info -> warnings -> fixes -> non-critical errors)')
     parser.add_argument('--debug', action='store_true', help='print extra debug information')
+    parser.add_argument('--boring', action='store_true', help='disable colorized output')
     #parser.add_argument('inputs', nargs=argparse.REMAINDER, help='remaining command line inputs')
     parser.add_argument('input', nargs='*', type=str,
                         help='file(s) to validate, as JSON file, DID, or TXT file listing inputs')
@@ -238,19 +230,24 @@ def write(destination: str, data: dict, force: bool = False):
             diff_str = json.dumps(diffs, indent=2)
             config.log(f"Output {destination} already exists, but differs: {diff_str}")
         else:
-            print(f"Output {destination} already exists and is identical, skipping write")
+            formatted = Formatter.colorize(Formatter.filename(destination, -60))
+            print(f"Output path {formatted} already exists and is identical, skipping write")
             return
         # If force is false, prompt the user to confirm overwriting the existing file
         if not force:
-            go = input(f"Output {destination} already exists, overwrite? (yes/no): ")
+            formatted = Formatter.colorize(Formatter.filename(destination, -55))
+            go = input(f"Output path {formatted} already exists, overwrite? (yes/no): ")
             if go.lower() not in ("yes", "y"):
                 print("Skipping write")
                 return
-        print(f"Overwriting existing file {destination}")
+        else:
+            formatted = Formatter.colorize(Formatter.filename(destination, -33))
+            print(f"Overwriting existing output path {formatted}")
     else:
         # Create the output directory if it doesn't exist
         os.makedirs(os.path.dirname(destination), exist_ok=True)
-        print(f"Writing fixed metadata to {destination}")
+        formatted = Formatter.colorize(Formatter.filename(destination, -26))
+        print(f"Writing fixed metadata to {formatted}")
     with open(destination, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2)
 
@@ -258,7 +255,7 @@ def main():
     """Main function to run the MetaCatch utility."""
     parser = get_parser()
     args = parser.parse_args()
-    config.set_verbosity(args.quiet, args.debug)
+    config.set_verbosity(args.quiet, args.debug, args.boring)
     config.log(f"Command line arguments: {args}")
     # Process user defaults and overrides
     defaults = read_json(args.default)
@@ -268,11 +265,8 @@ def main():
     if overrides:
         config.log(f"Overrides: {json.dumps(overrides, indent=2)}")
     if errors := validation.validate_defaults(defaults, overrides):
-        severity = errors[0][0]
-        config.log("Errors found in user defaults and overrides:", severity)
-        for sev, message in errors:
-            config.log(message, sev)
-        if severity >= config.VERBOSITY:
+        errors.log()
+        if errors.severity >= config.VERBOSITY:
             sys.exit(1)
     # Get inputs and outputs
     inputs = read_inputs(args.input)
@@ -285,21 +279,13 @@ def main():
     for name, data in inputs.items():
         config.log(f"Procesing input {name}:")
         errors = validation.validate_file(data, fix, defaults=defaults, overrides=overrides)
-        severity = errors[0][0] if errors else ES.NONE
+        severity = errors.severity
         max_severity = max(max_severity, severity)
         # If we are merging then skip individual reports unless there are critical errors
         if severity != ES.CRITICAL and merge and not outputs:
             continue
         # Print validation errors
-        msg = VALIDATION_STATUS[severity]
-        if severity < config.VERBOSITY:
-            print(f"File {name} {msg}!")
-        else:
-            print(f"File {name} {msg}:")
-            for sev, message in errors:
-                if sev < config.VERBOSITY:
-                    break
-                config.log(message, sev)
+        errors.log()
         # Save fixed metadata
         if outputs and severity != ES.CRITICAL:
             write(outputs[name], data, force=args.force)
@@ -319,16 +305,7 @@ def main():
         ordered_inputs = sorted(inputs.values(), key=lambda d: d['name'])
         # Do the merge and report any errors
         merged_file, errors = validation.merge_files(ordered_inputs, basename)
-        severity = errors[0][0] if errors else ES.NONE
-        msg = VALIDATION_STATUS[severity]
-        if severity < config.VERBOSITY:
-            print(f"Merged file {merge} {msg}!")
-        else:
-            print(f"File {merge} {msg}:")
-            for sev, message in errors:
-                if sev < config.VERBOSITY:
-                    break
-                config.log(message, sev)
+        errors.log()
         # Save fixed metadata
-        if severity != ES.CRITICAL:
+        if errors.severity < ES.CRITICAL:
             write(merge, merged_file, force=args.force)

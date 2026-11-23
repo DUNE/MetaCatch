@@ -6,37 +6,38 @@ from functools import partial
 from collections import defaultdict
 from collections.abc import Iterator, Iterable
 from typing import Callable
-from metacatch.config import ValidationError as VE
+from metacatch.config import EF
 
 # Merge functions for different types of metadata values
 
 def safe_sort(values):
     """Sort a list of values, using string representation if values are not comparable"""
     try:
-        return sorted(values)
+        values.sort()
     except TypeError:
-        return sorted(values, key=repr)
+        values.sort(key=repr)
+    return values
 
 def strict_merge(values):
     """Merge values with strict equality, returning a conflict error if any values differ"""
     # Get the list of unique values
     unique = []
-    errors = VE(0)
+    errors = EF.NONE
     for v in values:
         if v is None:
-            errors |= VE.MRG_MISSING
+            errors |= EF.MRG_MISSING
         elif v not in unique:
             unique.append(copy.deepcopy(v))
     # If there are no good values, return an empty list with the missing error flag
     if not unique:
-        return [], VE.MRG_MISSING
+        return [], EF.MRG_MISSING
     # If we have only one unique value, it is still a merge conflict if there were missing values
     if len(unique) == 1:
         if errors:
-            errors |= VE.MRG_CONFLICT
+            errors |= EF.MRG_CONFLICT
         return unique, errors
     # If we have multiple unique values, it is always a merge conflict
-    errors |= VE.MRG_CONFLICT
+    errors |= EF.MRG_CONFLICT
     # Sort the unique values for consistent output, if possible
     return safe_sort(unique), errors
 
@@ -44,28 +45,28 @@ def equal_merge(values):
     """Merge non-None values with strict equality, deleting the key if values differ"""
     # Get the list of unique values
     unique = None
-    errors = VE(0)
+    errors = EF.NONE
     empty = True
     for v in values:
         empty = False
         if v is None:
-            errors |= VE.MRG_MISSING
+            errors |= EF.MRG_MISSING
         elif unique is None:
             unique = copy.deepcopy(v)
         elif unique != v:
-            errors |= VE.MRG_DELETED
+            errors |= EF.MRG_DELETED
             unique = None
             break
     # If we have a unique value, return it with any missing error flags
     if empty:
-        errors |= VE.MRG_MISSING
+        errors |= EF.MRG_MISSING
     if unique is not None:
         return [unique], errors
     # If we short-circuited, we might need to continue iterating to check for missing values
-    if errors & VE.MRG_DELETED and not errors & VE.MRG_MISSING:
+    if errors & EF.MRG_DELETED and not errors & EF.MRG_MISSING:
         for v in values:
             if v is None:
-                errors |= VE.MRG_MISSING
+                errors |= EF.MRG_MISSING
                 break
     # Return an empty list with the appropriate error flags
     return [], errors
@@ -76,7 +77,7 @@ def set_union(values):
     first = set(union)
     for s in values:
         union.update(s)
-    return [union], VE(0) if union == first else VE.MRG_MODIFIED
+    return [union], EF.NONE if union == first else EF.MRG_MODIFIED
 
 def set_intersection(values):
     """Merge sets by taking the intersection of all values"""
@@ -88,8 +89,8 @@ def set_intersection(values):
         union.update(s)
     missing = union - intersect
     if missing:
-        return [intersect, missing], VE.MRG_SUBSET
-    return [intersect], VE(0) if intersect == first else VE.MRG_MODIFIED
+        return [intersect, missing], EF.MRG_SUBSET
+    return [intersect], EF.NONE if intersect == first else EF.MRG_MODIFIED
 
 def dict_union(values):
     """Merge dictionaries by taking the union of all keys with matching values"""
@@ -109,8 +110,8 @@ def dict_union(values):
         # Sort the collision values for consistent output, if possible
         for vals in collisions.values():
             safe_sort(vals)
-        return [result, collisions], VE.MRG_CONFLICT | VE.MRG_SUBSET
-    return [result], VE(0) if result == first else VE.MRG_MODIFIED
+        return [result, collisions], EF.MRG_CONFLICT | EF.MRG_SUBSET
+    return [result], EF.NONE if result == first else EF.MRG_MODIFIED
 
 def dict_intersection(values):
     """Merge dictionaries by taking the intersection of all keys with matching values"""
@@ -134,8 +135,8 @@ def dict_intersection(values):
         # Sort the missing values for consistent output, if possible
         for vals in missing.values():
             safe_sort(vals)
-        return [result, missing], VE.MRG_SUBSET
-    return [result], VE(0) if result == first else VE.MRG_MODIFIED
+        return [result, missing], EF.MRG_SUBSET
+    return [result], EF.NONE if result == first else EF.MRG_MODIFIED
 
 # Allowed merging methods for different types of metadata values
 MERGE_METHODS = {
@@ -143,28 +144,28 @@ MERGE_METHODS = {
         None:           strict_merge,
         "strict":       strict_merge,
         "equal":        equal_merge,
-        "delete":       lambda vals: ([], VE.MRG_DELETED),
+        "delete":       lambda vals: ([], EF.MRG_DELETED),
     },
     bool: {
-        "any":          lambda vals: ([any(vals)], VE(0)),
-        "all":          lambda vals: ([all(vals)], VE(0)),
+        "any":          lambda vals: ([any(vals)], EF.NONE),
+        "all":          lambda vals: ([all(vals)], EF.NONE),
     },
     int: {
-        "sum":          lambda vals: ([sum(vals)], VE(0)),
-        "min":          lambda vals: ([min(vals)], VE(0)),
-        "max":          lambda vals: ([max(vals)], VE(0)),
+        "sum":          lambda vals: ([sum(vals)], EF.NONE),
+        "min":          lambda vals: ([min(vals)], EF.NONE),
+        "max":          lambda vals: ([max(vals)], EF.NONE),
     },
     float: {
-        "sum":          lambda vals: ([sum(vals)], VE(0)),
-        "min":          lambda vals: ([min(vals)], VE(0)),
-        "max":          lambda vals: ([max(vals)], VE(0)),
+        "sum":          lambda vals: ([sum(vals)], EF.NONE),
+        "min":          lambda vals: ([min(vals)], EF.NONE),
+        "max":          lambda vals: ([max(vals)], EF.NONE),
     },
     str: {
-        "append":       lambda vals, arg="": ([arg.join(vals)], VE.MRG_ORDERED),
-        "sorted":       lambda vals, arg="": ([arg.join(sorted(set(vals)))], VE(0)),
+        "append":       lambda vals, arg="": ([arg.join(vals)], EF.MRG_ORDERED),
+        "sorted":       lambda vals, arg="": ([arg.join(sorted(set(vals)))], EF.NONE),
     },
     list: {
-        "append":       lambda vals: ([sum((copy.deepcopy(v) for v in vals), [])], VE.MRG_ORDERED),
+        "append":       lambda vals: ([sum((copy.deepcopy(v) for v in vals), [])], EF.MRG_ORDERED),
     },
     set: {
         "union":        set_union,
@@ -190,9 +191,12 @@ class IterTracker:
         else:
             self.iterable = iterable
         self.missing = False
+        self.multivalued = False
         self.empty = True
+        self.first = None
         # Get the first item from the iterable to determine if it is empty
         self.first = next(self, None)
+        self.multivalued = False # Reset multivalued flag after checking first item
         if self.first is not None:
             self.empty = False
             # Put the first item back into the iterable for future iterations
@@ -201,21 +205,31 @@ class IterTracker:
     @property
     def errors(self):
         """Return the error flags for this iterator"""
-        if self.missing:
-            return VE.MRG_MISSING
+        if self.missing and self.multivalued:
+            return EF.MRG_MISSING | EF.MRG_MODIFIED
         # Iterate through the rest of the values to check for missing values
         for item in self.iterable:
             if item is None:
                 self.missing = True
-                return VE.MRG_MISSING
-        # Finished iterating through all values, no missing values found
-        return VE(0)
+            elif item != self.first:
+                self.multivalued = True
+            if self.missing and self.multivalued:
+                return EF.MRG_MISSING | EF.MRG_MODIFIED
+        # Finished iterating through all values, return the appropriate error flags
+        errors = EF.NONE
+        if self.missing:
+            errors |= EF.MRG_MISSING
+        if self.multivalued:
+            errors |= EF.MRG_MODIFIED
+        return errors
 
     def __iter__(self):
         for item in self.iterable:
             if item is None:
                 self.missing = True
                 continue
+            if item != self.first:
+                self.multivalued = True
             yield item
 
     def __next__(self, default=None):
@@ -228,11 +242,11 @@ def typed_merge(merge_func: Callable, values: Iterable) -> tuple:
     # Wrap the values in an IterTracker to track missing inputs
     values = IterTracker(values)
     if values.empty:
-        return [], VE.MRG_MISSING
+        return [], EF.MRG_MISSING
     # Run the merge function on the good values
     result, errors = merge_func(values)
-    if result != values.first:
-        errors |= VE.MRG_MODIFIED
+    if not result or result[0] != values.first:
+        errors |= EF.MRG_MODIFIED
     # Add iteration error flags and return
     return result, errors | values.errors
 
