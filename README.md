@@ -15,6 +15,12 @@ However, the specification is far from complete, and we could use help fleshing 
 
 ## Client-Side MetaData Validation
 
+The "metacatch" command will run client-side validation on a list of inputs.  Inputs may be provided as either JSON file paths or existing DIDs to fetch from the MetaCat database.  Text files containing lists of additional inputs may also be provided and will be expanded automatically.
+
+MetaCatch may run in three different modes:
+  - By default, MetaCatch will simply report any errors or warnings, and suggest potential fixes if possible.
+  - The "--fix [<pattern>]" argument will make MetaCatch attempt to automatically fix any problems it detects.  The result
+
 ```
 usage: metacatch [options] <input> [<input> ...]
 
