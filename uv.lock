@@ -196,7 +196,7 @@ wheels = [
 
 [[package]]
 name = "metacat-client"
-version = "4.1.5"
+version = "4.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "lark" },
@@ -204,9 +204,9 @@ dependencies = [
     { name = "pythreader" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/55/a39825e87d6b967098239931a0aac437099626e7b4dd6eb69abf9e6474c1/metacat_client-4.1.5.tar.gz", hash = "sha256:0fc59bc0f8b834c19204010125124b8196115698197b5a46a6cd24f7b1ed02a1", size = 112512, upload-time = "2026-08-05T18:47:50.008Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/9c/9a29cd03d3ebc7d50796fcbb0026c6fbbf4b1fc5762cbb2a333a3fe71f0f/metacat_client-4.1.6.tar.gz", hash = "sha256:83540963bf45b5253d29de62ba27a8534c1335bbde5c2f6aaa176d2d72134db4", size = 115889, upload-time = "2026-11-17T16:54:29.815Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/73/8598e05326f9fdced7a8dd62e7d5bbc67607821db1fe9698cf6fa6ddc6ee/metacat_client-4.1.5-py3-none-any.whl", hash = "sha256:50807159721767f9b6fde76053e0c97cc517b9d9dc5da36fbb07125d0699656f", size = 127782, upload-time = "2026-08-05T18:47:48.934Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/b9/03d7c6f78a38bb2ce65e4b3b099f05d17c18ed203f7d89ae6f6e2ea70a14/metacat_client-4.1.6-py3-none-any.whl", hash = "sha256:5582a9d65ff64c4c9b1fce9124c2ea6d7244a34ef1faade3a9c7d0c174ada08b", size = 128134, upload-time = "2026-11-17T16:54:28.746Z" },
 ]
 
 [[package]]
@@ -232,7 +232,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "metacat-client", marker = "extra == 'standalone'" },
+    { name = "metacat-client", marker = "extra == 'standalone'", specifier = ">=4.1.6" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pyyaml" },
 ]
@@ -240,7 +240,7 @@ provides-extras = ["standalone", "test"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "metacat-client" },
+    { name = "metacat-client", specifier = ">=4.1.6" },
     { name = "pytest" },
 ]
 

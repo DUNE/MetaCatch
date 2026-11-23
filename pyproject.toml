@@ -20,14 +20,14 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 standalone = [
-  "metacat-client",
+  "metacat-client>=4.1.6",
 ]
 test = ["pytest"]
 
 [dependency-groups]
 dev = [
   "pytest",
-  "metacat-client"
+  "metacat-client>=4.1.6"
 ]
 
 [project.urls]

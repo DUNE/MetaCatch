@@ -74,11 +74,11 @@ class Category():
     def __init__(self, name: str, spec = None):
         self.name = name
         if isinstance(spec, (str, type(None))):
-            self.description = spec or ""
+            self.description = spec if spec else None
             self.required = self.required_default
             self.restricted = self.restricted_default
         elif isinstance(spec, dict):
-            self.description = spec.get("description", "")
+            self.description = spec.get("description", None)
             self.required = spec.get("required", self.required_default)
             self.restricted = spec.get("restricted", self.restricted_default)
         else:
@@ -279,10 +279,13 @@ class KeySpec:
 
     def server_spec(self, category: str = "") -> dict:
         """Return a dictionary of the key's specification used by the MetaCat database"""
-        out = {
-            "type": self.type.server_spec(),
-            "required": self.absolute
-        }
+        out = {}
+        if self.description:
+            out["description"] = self.description
+        if (type_name := self.type.server_spec()) != "any":
+            out["type"] = type_name
+        if self.absolute:
+            out["required"] = True
         # Adjust the required flag for category-based conditions
         cond_cat = self.required_category
         if category and cond_cat and (category == cond_cat or category.startswith(cond_cat + '.')):
@@ -412,7 +415,7 @@ class BoolKeySpec(KeySpec):
         # Otherwise, figure out the appropriate key type
         val_type = keytypes.server_type(self.true)
         if val_type != keytypes.server_type(self.false):
-            out["type"] = "any"
+            out.pop("type", None)
         else:
             out["type"] = val_type
         # Add the set of valid values to the specification
