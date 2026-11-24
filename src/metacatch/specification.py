@@ -324,6 +324,8 @@ class KeySpec:
         # First check for any known fixes for the value
         if (fixed := self.fix(value)) is not None:
             return [fixed], EF.VAL_REPLACED
+        if value is None:
+            return self.options, EF.VAL_NONE
         # Then check the type of the value
         converted, errors = self.convert(value)
         if not converted:
@@ -424,6 +426,9 @@ class BoolKeySpec(KeySpec):
 
     def check(self, value) -> tuple[list, EF]:
         """Check if a value is valid for the key"""
+        # Check for None values first, since they are not valid booleans
+        if value is None:
+            return [self.true, self.false], EF.VAL_NONE
         # Check for actual boolean values or the custom true/false values
         if value is True or value == self.true:
             return [True], EF.NONE if self.true is True else EF.VAL_CONVERTED
@@ -452,7 +457,7 @@ class BoolKeySpec(KeySpec):
 class OptionKeySpec(KeySpec):
     """Specification for a metadata key with an explicit set of options"""
     desc = "metadata key with options"
-    params = KeySpec.params | {"options", "old_options", "bad_options"}
+    params = KeySpec.params | {"options", "warnings", "errors"}
 
     def __init__(self, spec: dict):
         if "min" in spec or "max" in spec or "pattern" in spec:
@@ -461,8 +466,8 @@ class OptionKeySpec(KeySpec):
         if not self.type.optionable:
             raise SpecError("Option lists are only valid for numeric or string keys")
         self.val_options = self.parse_options(spec.get("options", {}))
-        self.old_options = self.parse_options(spec.get("old_options", {}))
-        self.bad_options = self.parse_options(spec.get("bad_options", {}))
+        self.old_options = self.parse_options(spec.get("warnings", {}))
+        self.bad_options = self.parse_options(spec.get("errors", {}))
         if not self.val_options:
             raise SpecError("Option keys must have at least one valid option")
         if not (
@@ -505,8 +510,8 @@ class OptionKeySpec(KeySpec):
         """Check if the value is valid according to the key's specification"""
         # Do standard type checking and conversion
         vals, errors = super().check(value)
-        if not vals:
-            return [], errors
+        if not vals or errors & EF.VAL_NONE:
+            return vals, errors
         orig_val = value
         value = vals[0]
         # If the value is retired, suggest the list of valid options
@@ -584,8 +589,8 @@ class ParamKeySpec(KeySpec):
         """Check if the value is valid according to the key's specification"""
         # Do standard type checking and conversion
         vals, errors = super().check(value)
-        if not vals:
-            return [], errors
+        if not vals or errors & EF.VAL_NONE:
+            return vals, errors
         # Check if the value is within the min/max range
         val = vals[0]
         if self.min is not None and val < self.min:
@@ -681,7 +686,7 @@ def parse(spec: dict) -> KeySpec:
     """Parse a key specification from the config file and return a KeySpec object"""
     if spec.get("type", None) == "bool":
         return BoolKeySpec(spec)
-    if "options" in spec or "old_options" in spec or "bad_options" in spec:
+    if "options" in spec or "warnings" in spec or "errors" in spec:
         return OptionKeySpec(spec)
     if "min" in spec or "max" in spec or "pattern" in spec:
         return ParamKeySpec(spec)
@@ -775,7 +780,7 @@ def extract_field(spec_dict: dict, field: str, extras: list[str], name: str) -> 
     out = spec_dict.pop(field, {})
     prefixes = {field + ' '} | {e.strip() + ' ' for e in extras}
     for extra in {k for k in spec_dict if any(k.startswith(p) for p in prefixes)}:
-        key = extra.split('.', 1)[1]
+        key = extra.split(' ', 1)[1]
         if key in out:
             raise SpecError(f"Redefining existing {name} '{key}'")
         out[key] = spec_dict.pop(extra)

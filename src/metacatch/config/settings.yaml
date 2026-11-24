@@ -11,7 +11,7 @@
 
 # Group error flags into classes for reporting and filtering
 error_groups:
-    CRITICAL: ["MRG_CONFLICT"]
+    CRITICAL: ["MRG_CONFLICT", "VAL_NONE"]
     WARNING:  ["KEY_DEPRECATED", "KEY_UNKNOWN", "KEY_SPEC", "VAL_DEPRECATED", "MRG_ORDERED"]
     INFO:     ["KEY_DESC", "VAL_DESC", "VAL_CONVERTED", "MRG_MODIFIED"]
     DELETED:  ["KEY_RETIRED", "USR_DELETED", "MRG_DELETED"]
@@ -109,6 +109,7 @@ key_error_messages:
 
 val_error_messages:
     CRITICAL:
+      - NONE:       "{k} ({vi})         Val is null, {vo}"
       - INVALID:    "{k} ({vi})         Val is invalid, {vo}"
       - TYPE:       "{k} ({vi})         Val has wrong type, expected {t}"
       - RETIRED|DESC:

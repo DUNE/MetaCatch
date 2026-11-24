@@ -221,6 +221,10 @@ class MetaKey:
         # User defaults and overrides and merged files have already been validated
         if self.errors & EF.USR_ERRORS or self.errors & EF.MRG_ERRORS:
             return
+        # Flag None values
+        if self.orig_val is None:
+            self.set_values(self.spec.options, EF.VAL_NONE)
+            return
         # Skip keys if the value has already been modified
         if self.vals != [self.orig_val]:
             return

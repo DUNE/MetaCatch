@@ -41,12 +41,15 @@
 # Otherwise, users may freely add new keys in unrestricted categories.
 # MetaCatch will set required to false and restricted to true by default.
 # Note that this is different from MetaCat, which sets restricted to false by default!
+# MetaCatch also allows categories to be flagged as 'retired', this is equivilant to
+# setting restricted=True, required=False, and all keys in the category to retired.
 
 # The CATEGORIES dictionary below contains category definitions of the form:
 #   category_name:
 #       description:    string describing the category
 #       required:       boolean (default false)
 #       restricted:     boolean (default true)
+#       retired:        boolean (default false)
 
 # Categories with default settings can also be defined by simply providing a description string:
 #   category_name:      description
@@ -63,12 +66,11 @@ CATEGORIES:
     ~: # Default behavior for all categories unless overridden
         required:       false
         restricted:     true
+        retired:        false
     core:
         description:    "Generally required metadata keys"
         required:       true
-    dune:
-        description:    "DUNE-specific metadata keys"
-        required:       true
+    dune:               "DUNE-specific metadata keys"
     dune_mc:            "DUNE Monte Carlo simulation metadata keys"
     merge:              "Keys used for merge jobs"
 
@@ -148,12 +150,12 @@ CONDITIONS:
 # These keys may use three additional attributes:
 #   category.key_with_options:
 #       options:        mapping of allowed values to human-readable descriptions
-#       old_options:    mapping of deprecated values to human-readable descriptions
-#       bad_options:    mapping of retired values to human-readable descriptions
+#       warnings:       mapping of deprecated values to human-readable descriptions
+#       errors:         mapping of retired values to human-readable descriptions
 # Keys must have at least one valid option, otherwise the key itself should be deprecated/retired.
 # Option descriptions may be empty, but should be provided if possible.
 # Descriptions for deprecated and retired options should explain why they are no longer allowed.
-# Retired values with direct replacements should use the fixes attribute instead of bad_options!
+# Retired values with direct replacements should use the fixes attribute instead of errors.
 
 # Alternatively, numeric and string keys may be be restricted to a range or specific pattern.
 # These keys may use three additional attributes:
@@ -225,17 +227,15 @@ CONDITIONS:
 ################################################################################
 
 core.data_stream:
-    description: "Type of data taking"
+    description: "Type of data-taking"
     required: true
     type: str
     options:
         "beam":
-        "noise":
         "cosmics":
         "calibration":
         "physics":
         "commissioning":
-        "pedestal":
         "trigprim":
         "g4beamline":
         "neutrino":
@@ -258,12 +258,16 @@ core.data_stream:
         "numib":                    "Minerva numi beam"
         "numip":                    "Minerva numi beam with interspersed pedestal data"
         "numil":                    "Minerva numi beam with interspersed light injection data"
-    old_options:
-        "out1":
-        "out2":
-        "study":
-    bad_options:
-        "None":
+    warnings:
+        "out1":                     "Please use a more descriptive name"
+        # Old values
+        "study":                    "Obsolete? (2023)"
+        "pedestal":                 "Same as pdstl? Obsolete? (2022)"
+        "noise":                    "Obsolete? (2020)"
+    errors:
+        "None":                     "Please specify a value!"
+        # Old values
+        "out2":                     "Obsolete (pre-2020)"
     fixes:
         "Test":                     "test"
         "tests":                    "test"
@@ -289,14 +293,11 @@ core.data_tier:
         "detector-simulated":
         "detsim":
         "edep-sim":
-        "root-hist":
         "root-tuple":
         "root-tuple-virtual":
-        "pandora-info":
         "pandora-reconstruction":
         "reco-recalibrated":
         "trigprim":
-        "sliced":
         "flow":
         "flow-calibration":
         "caf":
@@ -317,14 +318,19 @@ core.data_tier:
         "physics-ntuple":
         "tms-reco-full":
         "tms-reco-readout-full":
-    old_options:
         "test":
-        "stage1":
-        "stage2":
-        "sam-user":
-        "dc1input":
+    warnings:
         "caf-flat":                 "Flat caf files (use core.format_variant instead)"
         "caf-flat-analysis":        "Flat caf analysis files (use core.format_variant instead)"
+        "sam-user":                 "The data_tier should describe the processing stage"
+        # Old values
+        "pandora-info":             "Obsolete? (2024)"
+        "stage1":                   "Use a more descriptive name, obsolete? (2024)"
+        "stage2":                   "Use a more descriptive name, obsolete? (2024)"
+    errors:
+        "dc1input":                 "Obsolete (pre-2020)"
+        "root-hist":                "Obsolete (pre-2020)"
+        "sliced":                   "Obsolete (pre-2020)"
     fixes:
         "pandora_info":             "pandora-info"
         "trigger-primitives":       "trigprim"
@@ -351,16 +357,16 @@ core.file_format:
     required: true
     type: str
     options:
-        "root":
-        "artroot":
-        "binary":
-        "rootntuple":
-        "hdf5":
-        "tar":
-    old_options:
-        "unknown":
+        "binary":       "Raw binary data"
+        "root":         "ROOT file containg arbitrary objects"
+        "artroot":      "ROOT file containing art objects"
+        "rootntuple":   "ROOT file containing n-tuples"
+        "hdf5":         "HDF5 file format"
+        "tar":          "Tar archive of multiple files"
+    errors:
+        "unknown":      "Please specify a file format"
     fixes:
-        "tfile": "root"
+        "tfile":        "root"
 
 core.format_variant:
     description: "Variant of the data format"
@@ -368,8 +374,8 @@ core.format_variant:
     type: str
     default: "caf"
     options:
-        "caf": "Normal caf format"
-        "flat": "flatcaf format"
+        "caf":          "Hierarchical caf format"
+        "flat":         "Flattened flatcaf format"
 
 core.file_type:
     description: "Flag distinguishing between real and simulated data"
@@ -378,14 +384,14 @@ core.file_type:
     options:
         "mc":                       "Monte Carlo simulated data"
         "detector":                 "Real detector data"
-    old_options:
-        "importedDetector":         "Minerva imported detector data"
-        "unknown":
-        "test-data":
-        "binary":
-        "photon_detector":
-        "test":
-        "dc1simdaq":
+    errors:
+        "importedDetector":         "Real detector data imported from Minerva"
+        "unknown":                  "Please specify a file type"
+        "test-data":                "The file_type should be 'detector' or 'mc'"
+        "binary":                   "Binary is the file format, not the file type"
+        "photon_detector":          "Real detector data?"
+        "test":                     "Please specify a file type"
+        "dc1simdaq":                "The file_type should be 'detector' or 'mc'"
     fixes:
         "data":                     "detector"
         "montecarlo":               "mc"
@@ -397,55 +403,58 @@ core.run_type:
     options:
         "test":
         "protodune-sp":                     "ProtoDUNE Single Phase"
-        "protodune-dp":                     "ProtoDUNE Dual Phase"
         "iceberg":
-        "np04_vst":
         "hd-coldbox":
         "vd-coldbox":
         "vd-coldbox-bottom":
-        "vd-coldbox-top":
         "vd-coldbox-pixels":
         "hd-protodune":                     "ProtoDUNE Horizontal Drift"
         "vd-protodune":                     "ProtoDUNE Vertical Drift"
-        "vd-protodune-pds":
         "vd-protodune-top":
-        "dc4-vd-coldbox-bottom":
-        "dc4-vd-coldbox-top":
-        "dc4-hd-protodune":
         "dc25-vd-protodune":
-        "neardet":                          "Near Detector"
-        "neardet-lar":
-        "neardet-lar-genie":
-        "neardet-lar-genie-rootracker":
-        "neardet-lar-tms-sand":
-        "neardet-fsd-lar-charge":
-        "neardet-fsd-lar-light":
-        "neardet-fsd-lar-charge-light":
-        "neardet-2x2":
         "neardet-2x2-lar":
-        "neardet-2x2-lar-caf":
-        "neardet-2x2-lar-caf-flat":
         "neardet-2x2-lar-charge":
         "neardet-2x2-lar-light":
         "neardet-2x2-lar-charge-light":
-        "neardet-2x2-lar-genie":
-        "neardet-2x2-lar-genie-ghep":
-        "neardet-2x2-lar-genie-gtrac":
-        "neardet-2x2-lar-genie-rootracker":
-        "neardet-2x2-lar-reco":
         "neardet-2x2-minerva":
-        "fardet":                           "Far Detector"
-        "fardet-sp":                        "Far Detector Single Phase"
+        "neardet-fsd-lar-charge":
+        "neardet-fsd-lar-light":
+        "neardet-fsd-lar-charge-light": 
+        "neardet-lar-tms-sand":
         "fardet-hd":                        "Far Detector Horizontal Drift"
         "fardet-vd":                        "Far Detector Vertical Drift"
-        "311":
-        "311_dp_light":
-    old_options:
-        "physics":
         "ehn1-beam-np02":
         "ehn1-beam-np04":
-        "lbnf_beam":
-        "justin-tutorial":                  "JustIn tutorial data"
+    warnings:
+        "physics":                          "Please indicate the source detector"
+        # Old values
+        "justin-tutorial":                  "JustIn tutorial, obsolete? (2024)"
+        "vd-coldbox-top":                   "Obsolete? (2024)"
+        "neardet-2x2":                      "Near Detector 2x2, obsolete? (2023)"
+        "protodune-dp":                     "ProtoDUNE Dual Phase, obsolete? (2023)"
+        "dc4-hd-protodune":                 "Obsolete? (2022)"
+        "dc4-vd-coldbox-bottom":            "Obsolete? (2022)"
+        "dc4-vd-coldbox-top":               "Obsolete? (2022)"
+        "fardet-sp":                        "Far Detector Single Phase, obsolete? (2022)"
+        "lbnf_beam":                        "Obsolete? (2022)"
+        "neardet":                          "Near Detector, obsolete? (2022)"
+        "neardet-lar":                      "Near Detector Liquid Argon, obsolete? (2022)"
+        "vd-protodune-pds":                 "Obsolete? (2022)"
+        "np04_vst":                         "Obsolete? (2021)"
+    errors:
+        "neardet-2x2-lar-caf":              "Use data_tier='caf' and format_variant='caf'"
+        "neardet-2x2-lar-caf-flat":         "Use data_tier='caf' and format_variant='flat'"
+        "neardet-2x2-lar-reco":             "This should be a data_tier"
+        "neardet-2x2-lar-genie":            "Use data_tier='genie'?"
+        "neardet-2x2-lar-genie-ghep":       "Use data_tier='genie', or new data_tier?"
+        "neardet-2x2-lar-genie-gtrac":      "Use data_tier='genie', or new data_tier?"
+        "neardet-2x2-lar-genie-rootracker": "Use data_tier='genie', or new data_tier?"
+        "neardet-lar-genie":                "Use data_tier='genie'?"
+        "neardet-lar-genie-rootracker":     "Use data_tier='genie', or new data_tier?"
+        # Old values
+        "311":                              "Obsolete (pre-2020)"
+        "311_dp_light":                     "Obsolete (pre-2020)"
+        "fardet":                           "Far Detector, obsolete (pre-2020)"
     fixes:
         "protodune-hd":                     "hd-protodune"
     checks: ["self == namespace"]
@@ -468,8 +477,8 @@ retention.status:
     type: str
     default: "active"
     options:
-        "active":  "Permanent file that should be retained"
-        "virtual": "Temporary intermediate files"
+        "active":   "Permanent file"
+        "virtual":  "Temporary file"
 
 retention.class:
     description: "Flag used to determine retention status"
@@ -479,14 +488,14 @@ retention.class:
     options:
         "unknown":
         "physics":
-        "simulation":
         "rawdata":
         "commissioning":
         "test":
         "user":
-    old_options:
         "other":
-        "study":
+    warnings:
+        "simulation":       "Obsolete? (2023)"
+        "study":            "Obsolete? (2023)"
 
 ################################################################################
 #                         Optional but Fairly Standard                         #
@@ -557,7 +566,6 @@ dune.output_status:
     default: "confirmed"
     options:
         "confirmed":
-    old_options:
         "recorded":
         "uploaded":
         "good":
@@ -579,7 +587,6 @@ core.application.name:
     required: application output
     type: str
 
-core.application_version:       core.application.version
 core.application.version:
     description: "Version of the application that produced the file"
     required: application output
@@ -612,12 +619,10 @@ core.group:
     options:
         "dune":                     "Deep Underground Neutrino Experiment"
         "dunepro":                  "DUNE Production"
-    old_options:
-        "lbne":                     "Long Baseline Neutrino Experiment"
         "minerva":                  "Minerva Experiment"
+    errors:
+        "lbne":                     "Long Baseline Neutrino Experiment, obsolete (pre-2020)"
 
-dune_mc.gen_fcl_file:           dune_mc.gen_fcl_filename
-dune.mc.gen_fcl_filename:       dune_mc.gen_fcl_filename
 dune_mc.gen_fcl_filename:
     description: "Generator fcl file used to produce the simulation"
     #required: Monte Carlo
@@ -643,19 +648,16 @@ dune_mc.electron_lifetime:
     description: "Electron lifetime used in the simulation (e.g. '35ms')"
     type: str
 
-mc.liquid_flow:     dune_mc.liquid_flow
 dune_mc.liquid_flow:
     description: "Whether liquid flow is simulated"
     type: bool
     values: ["yes", "no"]
 
-mc.space_charge:    dune_mc.space_charge
 dune_mc.space_charge:
     description: "Whether space charge effects are simulated"
     type: bool
     values: ["yes", "no"]
 
-mc.with_cosmics:    dune_mc.with_cosmics
 dune_mc.with_cosmics:
     description: "Whether cosmic rays are included in the simulation"
     type: bool
@@ -770,7 +772,6 @@ dune_mc.name:
 dune_mc.nu:
 dune_mc.rawdigits:
 dune_mc.rock:
-dune_mc.topvolume:                  dune_mc.top_volume
 dune_mc.top_volume:
 dune.user:
 dune.wobconf:
@@ -911,74 +912,79 @@ online.timestamp:
 file.sim_2x2.version:
 
 ################################################################################
-#                             Known Obsolete Keys                              #
+#                          Known Bad or Obsolete Keys                          #
 ################################################################################
 
-################################################################################
-#                      Prototypes of origin.applications                       #
-################################################################################
-
-progenitor.applications:
-    description: "List of {name, version, config} dicts for origin apps, superseded by origin.applications.x"
-    status: retired
+#--------------------- Prototypes of origin.applications ----------------------#
 
 core.progenitor_application_names:
-    description: "List of origin app names, superseded by origin.applications.names"
+    description: "List of origin app names, replaced by origin.applications.names"
+    status: retired
+core.progenitor_application_versions:
+    description: "List of origin app versions, replaced by origin.applications.versions"
+    status: retired
+core.progenitor_config_files:
+    description: "List of origin app config files, replaced by origin.applications.config_files"
+    status: retired
+
+CATEGORY progenitor: "Obsolete prototype of origin.applications"
+progenitor.applications:
+    description: "List of origin app {name, version, config} dicts"
     status: retired
 progenitor.application_names:
-    description: "List of origin app names, superseded by origin.applications.names"
-    status: retired
-progenitor.applications.names:
-    description: "List of origin app names, superseded by origin.applications.names"
-    status: retired
-
-core.progenitor_application_versions:
-    description: "List of origin app versions, superseded by origin.applications.versions"
+    description: "List of origin app names"
     status: retired
 progenitor.application_versions:
-    description: "List of origin app versions, superseded by origin.applications.versions"
-    status: retired
-progenitor.applications.versions:
-    description: "Dict of origin app versions, superseded by origin.applications.versions"
-    status: retired
-progenitor.gen.version:
-    description: "Origin gen version, superseded by origin.applications.versions['gen']"
-    status: retired
-progenitor.g4_stage1.version:
-    description: "Origin g4_stage1 version, superseded by origin.applications.versions['g4_stage1']"
-    status: retired
-progenitor.g4_stage2.version:
-    description: "Origin g4_stage2 version, superseded by origin.applications.versions['g4_stage2']"
-    status: retired
-progenitor.detsim.version:
-    description: "Origin detsim version, superseded by origin.applications.versions['detsim']"
-    status: retired
-
-core.progenitor_config_files:
-    description: "List of origin app configs, superseded by origin.applications.config_files"
+    description: "List of origin app versions"
     status: retired
 progenitor.config_files:
-    description: "List of origin app configs, superseded by origin.applications.config_files"
-    status: retired
-progenitor.applications.config_files:
-    description: "Dict of origin app configs, superseded by origin.applications.config_files"
-    status: retired
-progenitor.gen.config_file:
-    description: "Origin gen config, superseded by origin.applications.config_files['gen']"
-    status: retired
-progenitor.g4_stage1.config_file:
-    description: "Origin g4_stage1 config, superseded by origin.applications.config_files['g4_stage1']"
-    status: retired
-progenitor.g4_stage2.config_file:
-    description: "Origin g4_stage2 config, superseded by origin.applications.config_files['g4_stage2']"
-    status: retired
-progenitor.detsim.config_file:
-    description: "Origin detsim config, superseded by origin.applications.config_files['detsim']"
+    description: "List of origin app config files"
     status: retired
 
-################################################################################
-#                    LBNE Keys With Direct DUNE Equivalents                    #
-################################################################################
+CATEGORY progenitor.applications: "Obsolete prototype of origin.applications"
+progenitor.applications.names:
+    description: "List of origin app names"
+    status: retired
+progenitor.applications.versions:
+    description: "Dict of origin app versions"
+    status: retired
+progenitor.applications.config_files:
+    description: "Dict of origin app config files"
+    status: retired
+
+CATEGORY progenitor.gen: "Obsolete prototype of origin.applications.*[gen]"
+progenitor.gen.version:
+    description: "Origin 'gen' app version"
+    status: retired
+progenitor.gen.config_file:
+    description: "Origin 'gen' app config file"
+    status: retired
+
+CATEGORY progenitor.g4_stage1: "Obsolete prototype of origin.applications.*[g4_stage1]"
+progenitor.g4_stage1.version:
+    description: "Origin 'g4_stage1' app version"
+    status: retired
+progenitor.g4_stage1.config_file:
+    description: "Origin 'g4_stage1' app config file"
+    status: retired
+
+CATEGORY progenitor.g4_stage2: "Obsolete prototype of origin.applications.*[g4_stage2]"
+progenitor.g4_stage2.version:
+    description: "Origin 'g4_stage2' app version"
+    status: retired
+progenitor.g4_stage2.config_file:
+    description: "Origin 'g4_stage2' app config file"
+    status: retired
+
+CATEGORY progenitor.detsim: "Obsolete prototype of origin.applications.*[detsim]"
+progenitor.detsim.version:
+    description: "Origin 'detsim' app version"
+    status: retired
+progenitor.detsim.config_file:
+    description: "Origin 'detsim' app config file"
+    status: retired
+
+#------------------- LBNE Keys With Direct DUNE Equivalents -------------------#
 
 lbne_data.detector_type:    dune_data.detector_type
 lbne_mc.beam_flux_id:       dune_mc.beam_flux_id
@@ -989,9 +995,17 @@ lbne_mc.miscellaneous:      dune_mc.miscellaneous
 lbne_mc.name:               dune_mc.name
 lbne_mc.neutrino_flavors:   dune_mc.neutrino_flavors
 
-################################################################################
-#                                 Illegal Keys                                 #
-################################################################################
+#-------------------------------- Random Typos --------------------------------#
+
+core.application_version:   core.application.version
+dune_mc.gen_fcl_file:       dune_mc.gen_fcl_filename
+dune.mc.gen_fcl_filename:   dune_mc.gen_fcl_filename
+dune_mc.topvolume:          dune_mc.top_volume
+mc.liquid_flow:             dune_mc.liquid_flow
+mc.space_charge:            dune_mc.space_charge
+mc.with_cosmics:            dune_mc.with_cosmics
+
+#----------------------------- Illegal Key Names ------------------------------#
 
 artdaq-core.version:        artdaq_core.version
 artdaq-core.timestamp:      artdaq_core.timestamp
