@@ -102,6 +102,7 @@ class ErrorFlag(enum.Flag):
     KEY_DESC        = enum.auto()
     # Value Flags
     VAL_TYPE        = enum.auto()
+    VAL_NONE        = enum.auto()
     VAL_INVALID     = enum.auto()
     VAL_DEPRECATED  = enum.auto()
     VAL_RETIRED     = enum.auto()
@@ -253,17 +254,18 @@ class Formatter:
         # Set default values for width and min_count if not provided
         width = cls.width(width)
         min_count = min_count if min_count is not None else cls.min_element_count
-        # Get the widths of all the input strings
-        widths = [cls.str_width(s) for s in vals]
+        # Make a copy of the inputs, and get their widths
+        out = vals.copy()
+        widths = [cls.str_width(s) for s in out]
         # Pop elements until '[' + ', '.join(strings) + ']' fits within the width
         tail = ""
         dropped = 0
-        while len(vals) > min_count and sum(widths) + 2*len(vals) + len(tail) > width:
-            vals.pop()
+        while len(out) > min_count and sum(widths) + 2*len(out) + len(tail) > width:
+            out.pop()
             widths.pop()
             dropped += 1
             tail = f", ... (+{dropped})"
-        return ", ".join(vals) + tail
+        return ", ".join(out) + tail
 
     @classmethod
     def filename(cls, filename: str, width: int|None = None) -> str:
@@ -323,9 +325,9 @@ class Formatter:
         if not opts:
             return "no valid matches found!"
         if len(opts) == 1:
-            return f"did you mean {repr(opts[0])}?"
+            return f"did you mean #({repr(opts[0])})#?"
         width = cls.width(width, -22) # -22 for "did you mean one of: ?"
-        return f"did you mean one of: {cls.truncate(opts, width)}?"
+        return f"did you mean one of: #({cls.truncate(opts, width)})#?"
 
     def format(self, message: str, width: int|None = None) -> str:
         """Format a message by substituting the key information"""
@@ -335,12 +337,14 @@ class Formatter:
         # First try formatting with the full width, and see if it fits
         width = self.width(width)
         self.width_target = width
+        print(f"Formatting message with width {self.width_target}")
         max_out = message.format_map(self)
         max_len = self.str_width(max_out)
         if max_len <= width:
             return self.pad(max_out, width) # Pad to the width if necessary
         # Next, set the width limit to 0 to see if it is even possible to fit
         self.width_target = 0
+        print(f"Formatting message with width {self.width_target}")
         min_out = message.format_map(self)
         min_len = self.str_width(min_out)
         if min_len >= width:
@@ -369,7 +373,7 @@ class Formatter:
                 min_len = out_len
                 min_out = out
             # If the limits are too close together, the shorter output is the best fit
-            if max_len - min_len <= 1:
+            if max_lim - min_lim <= 1:
                 return self.pad(min_out, width) # Pad to the width if necessary
 
     def _check_field(self, field: str):
