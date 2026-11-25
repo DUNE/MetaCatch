@@ -11,9 +11,23 @@
 # Many well-defined keys also still need human-readable descriptions for their valid options.
 # Any readers are encouraged to contribute updates to this specification!
 
-################################################################################
-#                       MetaData Key And Category Naming                       #
-################################################################################
+#----------------------- Versioning and Synchronization -----------------------#
+
+# The SYNCHRONIZATION dictionary below is used to track updates to the specification.
+# The version should be the MetaCatch major version plus the UTC date, as V.YY.MM.DD
+# Multiple patches on the same day may append a letter if necessary, e.g. 0.26.11.25b
+# The other fields control how the specification is applied to the MetaCat database:
+# - optional:   Validate optional keys.  If false, only required keys will be validated.
+# - restricted: Set categories to restricted by default, see the categories section below.
+# - conditions: Enable conditionally required keys, see the conditions section below.
+
+SYNCHRONIZATION:
+    version:    0.26.11.25
+    optional:   false
+    restricted: false
+    conditions: false
+
+#---------------------- MetaData Key And Category Naming ----------------------#
 
 # MetaCat stores file metadata as a dictionary of key, value pairs.
 # Keys must be strings, while the value type and constraints vary by key.
@@ -31,7 +45,7 @@
 # - All other characters must be either lowercase letters, numbers, or underscores
 
 ################################################################################
-#                             Category Definitions                             #
+#                                  Categories                                  #
 ################################################################################
 
 # Categories may have an associated description, and also 'required' or 'restricted' flags.
@@ -62,20 +76,22 @@
 # - Any missing category definitions will be created automatically with default settings
 # - Required keys will automatically flag all parent categories as required
 
+#---------------------------- Category Definitions ----------------------------#
+
 CATEGORIES:
     ~: # Default behavior for all categories unless overridden
         required:       false
         restricted:     true
         retired:        false
     core:
-        description:    "Generally required metadata keys"
+        description:    "Core metadata keys"
         required:       true
     dune:               "DUNE-specific metadata keys"
     dune_mc:            "DUNE Monte Carlo simulation metadata keys"
     merge:              "Keys used for merge jobs"
 
 ################################################################################
-#                             Condition Definitions                            #
+#                                  Conditions                                  #
 ################################################################################
 
 # Most keys are optional, while others are standard requirements for all files.
@@ -109,6 +125,8 @@ CATEGORIES:
 # Condition names should be descriptive, and will be inserted into error messages as:
 #   "ERROR:     Missing key '{key_name}' is required for {condition_name} files"
 
+#--------------------------- Condition Definitions ----------------------------#
+
 CONDITIONS:
     "CAF": "core.data_tier == 'caf'"
     "raw": "core.data_tier in ['raw', 'binary-raw', 'trigprim']"
@@ -123,7 +141,7 @@ CONDITIONS:
         category:   "dune_mc"
 
 ################################################################################
-#                               Key Definitions                                #
+#                                MetaData Keys                                 #
 ################################################################################
 
 # Metadata keys are defined by providing a dictionary using the full key name.
@@ -368,15 +386,6 @@ core.file_format:
     fixes:
         "tfile":        "root"
 
-core.format_variant:
-    description: "Variant of the data format"
-    required: CAF
-    type: str
-    default: "caf"
-    options:
-        "caf":          "Hierarchical caf format"
-        "flat":         "Flattened flatcaf format"
-
 core.file_type:
     description: "Flag distinguishing between real and simulated data"
     required: true
@@ -500,6 +509,15 @@ retention.class:
 ################################################################################
 #                         Optional but Fairly Standard                         #
 ################################################################################
+
+core.format_variant:
+    description: "Variant of the data format"
+    required: CAF
+    type: str
+    default: "caf"
+    options:
+        "caf":          "Hierarchical caf format"
+        "flat":         "Flattened flatcaf format"
 
 core.start_time:
     description: "Unix UTC time at which the process that created the file started"

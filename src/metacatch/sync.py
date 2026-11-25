@@ -55,7 +55,7 @@ def local_categories(mode: SyncMode = SyncMode.MINIMAL):
             if not spec["required"]:
                 spec["keys"] = {}
             else:
-                spec["keys"] = {k: v for k, v in spec["keys"].items() if v["required"]}
+                spec["keys"] = {k: v for k, v in spec["keys"].items() if v.get("required")}
         # Skip empty categories
         empty = False
         for param in ("keys", "required", "restricted", "description"):

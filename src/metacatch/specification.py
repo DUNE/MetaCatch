@@ -2,11 +2,14 @@
 
 import sys
 import re
+from datetime import datetime, timezone
 from collections import defaultdict, ChainMap
-from metacatch import config, keytypes, expression, fuzzy
+import metacat.webapi as metacat #pylint: disable=import-error
+from metacatch import config, keytypes, expression, fuzzy, __version__
 from metacatch.keytypes import KeyType
 from metacatch.config import EF
 
+synchronization = {}
 categories = {}
 conditions = {}
 file_keys = {"name": str, "namespace": str}
@@ -16,6 +19,70 @@ keys_by_length = defaultdict(set)
 
 class SpecError(Exception):
     """Exception raised for errors in the metadata specification"""
+
+class SpecVersion:
+    """Class representing a metadata specification version of the form V.YY.MM.DD[p]"""
+    def __init__(self, version: str):
+        strings = version.split('.')
+        # Extract the patch letter if it exists, and convert it to a number
+        if len(strings[-1]) == 3 and not strings[-1].isdecimal():
+            patch = ord(strings[-1][2]) - ord('a') + 1
+            if patch < 1 or patch > 26:
+                raise SpecError(
+                    f"Specification patch must be a letter (a-z), got '{strings[-1][2]}'")
+            strings[-1] = strings[-1][:2]
+        else:
+            patch = 0
+        # Check that the segments are valid, and convert them to integers
+        try:
+            nums = [int(s) for s in strings]
+        except ValueError:
+            nums = []
+        if not (
+            len(nums) == 4 and nums[0] >= 0 and     # Major version is non-negative
+            0 <= nums[1] <= 99 and                  # Year is (20)00 - (20)99
+            1 <= nums[2] <= 12 and                  # Month is 01-12
+            1 <= nums[3] <= 31 and                  # Day is 01-31
+            all(len(s) == 2 for s in strings[1:])   # Make sure YY, MM, DD are two digits
+        ):
+            raise SpecError(
+                f"Specification version must be of the form V.YY.MM.DD[p], got '{version}'")
+        # Store the version as a tuple
+        nums.append(patch)
+        self.ver = tuple(nums)
+        # Make sure the date is not in the future
+        if self.date > datetime.now(timezone.utc):
+            raise SpecError(
+                f"Specification date {self.date.strftime('%y.%m.%d')} is in the future")
+
+    def __repr__(self):
+        """Return a string representation of the version"""
+        return '.'.join(str(n) for n in self.ver)
+
+    def __str__(self):
+        """Return the version as a string"""
+        out = '.'.join([str(self.ver[0])] + [f"{s:02d}" for s in self.ver[1:4]])
+        if self.ver[4]:
+            out += chr(ord('a') + self.ver[4] - 1)
+        return out
+
+    def __lt__(self, other):
+        """Compare two versions"""
+        return self.ver < other.ver
+
+    def __eq__(self, other):
+        """Compare two versions"""
+        return self.ver == other.ver
+
+    @property
+    def major(self):
+        """Return the major version number"""
+        return self.ver[0]
+
+    @property
+    def date(self) -> datetime:
+        """Return the date of the version as a string"""
+        return datetime(2000 + self.ver[1], self.ver[2], self.ver[3], tzinfo=timezone.utc)
 
 class Condition():
     """Class to represent a condition in the metadata specification"""
@@ -805,10 +872,56 @@ def load_conditions(spec_dict: dict):
             raise SpecError("Condition name 'all' is reserved for absolute requirements")
         conditions[cond] = Condition(spec)
 
+def server_spec_version() -> SpecVersion:
+    """
+    Get the MetaCat server specification version from the core category description
+    The description should look like "description (spec version V.YY.MM.DD)"
+    """
+    client = metacat.MetaCatClient()
+    core = client.get_category("core")
+    if (
+        isinstance(core, dict) and
+        (core_desc := core.get("description", None)) is not None and
+        "(" in core_desc and core_desc.endswith(")")
+    ):
+        ver_str = core_desc.rsplit(" ", 1)[-1].rstrip(")")
+        try:
+            return SpecVersion(ver_str)
+        except SpecError:
+            pass
+    return SpecVersion("0.00.01.01")
+
+def load_synchronization(spec_dict: dict):
+    """Load the synchronization information from the specification"""
+    if (spec := spec_dict.pop("SYNCHRONIZATION", None)) is None:
+        raise SpecError("Specification is missing the SYNCHRONIZATION dictionary")
+    client_ver = SpecVersion(spec.pop("version"))
+    synchronization["client_spec"] = client_ver
+    # Get the synchronization flags, and raise an error if any are missing
+    for field in ["optional", "restricted", "conditions"]:
+        if (flag := spec.pop(field, None)) is None:
+            raise SpecError(f"Specification is missing SYNCHRONIZATION flag '{field}'")
+        synchronization[field] = flag
+    # Warn if there are any extra fields in the synchronization dictionary
+    if spec:
+        raise SpecError(f"Specification has unknown SYNCHRONIZATION flags: {list(spec.keys())}")
+    # Make sure the spec version is compatible with the package version
+    pkg_major = int(__version__.split('.', 1)[0])
+    if client_ver.major != pkg_major:
+        raise SpecError(f"MetaCatch package version {__version__} is incompatible with "
+                        f"specification version {client_ver}")
+    # Make sure the spec version is up to date with the MetaCat server version
+    server_ver = server_spec_version()
+    if client_ver < server_ver:
+        raise SpecError(f"Local specification version {client_ver} is out of date with "
+                        f"MetaCat server version {server_ver}")
+    synchronization["server_spec"] = server_ver
+
 def load():
     """Load the spec from the specification.yaml file"""
     spec_dict = config.read("specification.yaml")
     try:
+        load_synchronization(spec_dict)
         load_categories(spec_dict)
         load_conditions(spec_dict)
         for key, spec in spec_dict.items():
