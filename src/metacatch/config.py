@@ -337,14 +337,12 @@ class Formatter:
         # First try formatting with the full width, and see if it fits
         width = self.width(width)
         self.width_target = width
-        print(f"Formatting message with width {self.width_target}")
         max_out = message.format_map(self)
         max_len = self.str_width(max_out)
         if max_len <= width:
             return self.pad(max_out, width) # Pad to the width if necessary
         # Next, set the width limit to 0 to see if it is even possible to fit
         self.width_target = 0
-        print(f"Formatting message with width {self.width_target}")
         min_out = message.format_map(self)
         min_len = self.str_width(min_out)
         if min_len >= width:

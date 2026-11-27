@@ -227,7 +227,7 @@ class KeyType:
         """Return True if the type is valid for option lists (int, float, str)"""
         return self.type in {int, float, str}
 
-    def server_spec(self):
+    def export(self):
         """Return the type specification used by the MetaCat database"""
         if self.type is None:
             return "any"

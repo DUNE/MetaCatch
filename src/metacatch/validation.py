@@ -500,7 +500,7 @@ class MetaDict:
             else:
                 category = categories[0]
             # Unknown keys are only allowed in unrestricted categories
-            if not (cat_spec := specification.categories.get(category)) or cat_spec.restricted:
+            if not (cat_spec := specification.categories.get(category)) or not cat_spec.open:
                 continue
             # Check for ambiguity with existing keys in the spec
             matches = [m for m,_ in self.get_matches(key, formatted)]

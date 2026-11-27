@@ -2,6 +2,7 @@
 
 import sys
 import re
+import enum
 from datetime import datetime, timezone
 from collections import defaultdict, ChainMap
 import metacat.webapi as metacat #pylint: disable=import-error
@@ -133,57 +134,77 @@ class Condition():
             return any(key.startswith(self.category) for key in metadata)
         return False
 
+class CatType(enum.Enum):
+    """Enum for category types"""
+    DEFAULT     = enum.auto()
+    OPEN        = enum.auto()
+    RESTRICTED  = enum.auto()
+    RETIRED     = enum.auto()
+
 class Category():
     """Class to represent a category in the metadata specification"""
-    required_default = False
-    restricted_default = True
-
-    def __init__(self, name: str, spec = None):
+    def __init__(self, name: str, spec: dict|str|None = None):
         self.name = name
-        if isinstance(spec, (str, type(None))):
-            self.description = spec if spec else None
-            self.required = self.required_default
-            self.restricted = self.restricted_default
-        elif isinstance(spec, dict):
-            self.description = spec.get("description", None)
-            self.required = spec.get("required", self.required_default)
-            self.restricted = spec.get("restricted", self.restricted_default)
-        else:
-            raise SpecError(f"Invalid category specification: {repr(spec)}")
+        self.required = False
         self.keys = set()
-        self.parent = None
         self.children = []
-        self.conditional = False
+        # If the spec is a string or None, treat it as a description
+        if spec is None or isinstance(spec, str):
+            spec = {"description": spec}
+        # Otherwise, the spec should be a dictionary with a description and type
+        elif not isinstance(spec, dict):
+            raise SpecError(f"Invalid category specification: {repr(spec)}")
+        # Load the spec, making sure the type is valid
+        self.description = spec.pop("description", None)
+        type_name = spec.pop("type", "default")
+        try:
+            self.type = CatType[type_name.upper()]
+        except KeyError as e:
+            raise SpecError(f"Invalid category type: {repr(type_name)}") from e
+        # Make sure there are no extra keys in the spec
+        if spec:
+            raise SpecError(f"Unexpected keys in category specification: {repr(spec)}")
+        # Make sure the category name is in the standard format
+        if format_key(name) != name:
+            if self.type in (CatType.DEFAULT, CatType.RETIRED):
+                self.type = CatType.RETIRED
+            else:
+                raise SpecError(f"Illegal category '{name}' must be retired")
+        # If this is a top-level category, we're done
+        if (parent := self.parent) is None:
+            return
+        # Add subcategories to the parent category's children list
+        parent.children.append(self)
+        # If the parent is retired, this subcategory must also be retired
+        if parent.type != CatType.RETIRED:
+            return
+        if self.type in (CatType.DEFAULT, CatType.RETIRED):
+            self.type = CatType.RETIRED
+            return
+        raise SpecError(f"Cannot have a {type_name} subcategory '{name}' under a retired parent")
 
     @property
-    def subcategory(self):
-        """Return True if the category is a subcategory"""
-        return '.' in self.name
+    def parent(self):
+        """Return the parent category, if any"""
+        if '.' not in self.name:
+            return None
+        par_name = self.name.rsplit('.', 1)[0]
+        if (par_obj := categories.get(par_name, None)) is None:
+            raise SpecError(f"Category '{self.name}' has undefined parent category '{par_name}'")
+        return par_obj
 
-    def set_required(self):
+    @property
+    def open(self):
+        """Return True if the category is open"""
+        return self.type == CatType.OPEN
+
+    def require(self):
         """Mark the category as required"""
+        if self.type == CatType.RETIRED:
+            raise SpecError(f"Cannot set retired category '{self.name}' as required")
         self.required = True
         if self.parent is not None:
-            self.parent.set_required()
-
-    def set_parent(self, parent):
-        """Set the parent category"""
-        self.parent = parent
-        parent.children.append(self)
-        if self.required:
-            parent.set_required()
-
-    def update(self, spec):
-        """Update the category specification"""
-        if isinstance(spec, (str, type(None))):
-            self.description = spec or ""
-        elif isinstance(spec, dict):
-            self.description = spec.get("description", self.description)
-            self.restricted = spec.get("restricted", self.restricted)
-            if spec.get("required", False):
-                self.set_required()
-        else:
-            raise SpecError(f"Invalid category specification: {repr(spec)}")
+            self.parent.require()
 
     def add_key(self, key):
         """Add a key to the category"""
@@ -200,44 +221,89 @@ class Category():
             out.update(child.all_keys)
         return out
 
-    def validate_conditions(self):
+    def validate_conditions(self) -> bool:
         """Validate conditional category requirements"""
-        if self.required:
-            return
-        cond_self = False
+        # * O R - keys required if other keys in the subcategory exist
+        # O R R - subcategory & keys required if other keys in the parent category exist
+        # Don't need to do anything for required or top-level categories
+        if self.required or self.parent is None:
+            return False
+        cond_self = set()
         cond_parent = False
-        for key in self.keys:
-            spec = meta_keys.get(f"{self.name}.{key}", None)
-            if spec is None or not (cond_cat := spec.required_category):
+        # Loop through all keys in the category and subcategories
+        for key in self.all_keys:
+            # Skip keys that are not conditional requirements
+            if (spec := meta_keys.get(key)) is None or not (cond_cat := spec.required_category):
                 continue
             if cond_cat == self.name:
-                cond_self = True
+                cond_self.add(key)
             elif self.name.startswith(cond_cat + '.'):
                 cond_parent = True
+        # If any keys depend on the parent, they all have to
         if cond_self and cond_parent:
-            raise SpecError(f"Conflicting category-based conditions in category '{self.name}'")
-        self.conditional = cond_parent
+            par = self.name.rsplit('.', 1)[0]
+            keys = "".join(f"\n  {k}" for k in sorted(cond_self))
+            raise SpecError(
+                f"Category-based requirement '{self.name}' promoted to '{par}' for keys:{keys}")
+        # Return true if we found a dependency on the parent category
+        return cond_parent
 
-    def server_spec(self, basic = False):
+    def export(self):
         """Return a dictionary of the category's specification used by the MetaCat database"""
-        # In basic mode, treat categories as unrestricted
-        restricted = self.restricted and not basic
+        # Start with basic spec information
         out = {
-            "description": self.description,
-            "required": self.required or self.conditional,
-            "restricted": restricted,
-            "keys": {}
+            "description":  self.description,
+            "required":     self.required,
+            "restricted":   self.type in (CatType.RESTRICTED, CatType.RETIRED),
+            "keys":         {}
         }
-        for key in self.keys:
-            spec = meta_keys.get(f"{self.name}.{key}", KeySpec({"status": "RETIRED"}))
-            # In basic mode, skip keys without a full specification
-            if basic and not spec.description:
+        # If the category is retired, just return the spec with no keys
+        if self.type == CatType.RETIRED:
+            return out
+        # Add spec version to the core category description
+        if self.name == "core":
+            out["description"] += f" (spec version {synchronization['client_spec']})"
+        # In restricted sync mode, set default categories to restricted
+        if self.type == CatType.DEFAULT and synchronization["restricted"]:
+            out["restricted"] = True
+        # In conditional sync mode, check if the category depends on the parent
+        if synchronization["conditions"] and not self.required and self.parent is not None:
+            out["required"] = self.validate_conditions()
+
+        # Add key definitions
+        for param in self.keys:
+            name = f"{self.name}.{param}"
+            key = meta_keys.get(name)
+            # First deal with retired or replaced keys
+            if key is None or key.retired:
+                # Retired keys are only included in retired sync mode
+                if not synchronization["retired"]:
+                    continue
+                # Create a description for replaced keys
+                desc = key.description if key else f"Replaced by {replaced_keys[name]}"
+                # Add a spec with just the description and an empty set of valid values
+                out["keys"][param] = {
+                    "description": desc,
+                    "values": set()
+                }
                 continue
-            # If the category is restricted, skipping retired keys will make them invalid
-            if restricted and spec.retired:
+            # Next, figure out if the key is required, including conditions if enabled
+            required = key.absolute
+            if synchronization["conditions"] and (cond := key.required_category) is not None:
+                required = cond == self.name or self.name.startswith(cond + '.')
+            # Only include optional key definitions in optional sync mode
+            if not required and not synchronization["optional"]:
+                # If the category is restricted, still include the key name and description
+                if out["restricted"]:
+                    out["keys"][param] = {
+                        "description": key.description
+                    }
                 continue
-            # Add the key's specification to the category's specification
-            out["keys"][key] = spec.server_spec(self.name)
+            # Othwise, add the key's specification to the category's specification
+            spec = key.export()
+            if required:
+                spec["required"] = True
+            out["keys"][param] = spec
         return out
 
 class KeySpec:
@@ -344,24 +410,20 @@ class KeySpec:
         """Return the list of valid options for the key, if any"""
         return [self.default] if self.default is not None else []
 
-    def server_spec(self, category: str = "") -> dict:
+    def export(self) -> dict:
         """Return a dictionary of the key's specification used by the MetaCat database"""
         out = {}
         if self.description:
             out["description"] = self.description
-        if (type_name := self.type.server_spec()) != "any":
+        if (type_name := self.type.export()) != "any":
             out["type"] = type_name
         if self.absolute:
-            out["required"] = True
-        # Adjust the required flag for category-based conditions
-        cond_cat = self.required_category
-        if category and cond_cat and (category == cond_cat or category.startswith(cond_cat + '.')):
             out["required"] = True
         # If the key is retired, give it an empty set of valid values
         if self.retired:
             out["values"] = set()
             if not self.type.optionable:
-                out["type"] = "any"
+                out.pop("type", None)
         return out
 
     def fix(self, value):
@@ -472,10 +534,10 @@ class BoolKeySpec(KeySpec):
         """Return the list of valid options for the key"""
         return [self.true, self.false]
 
-    def server_spec(self, category: str = "") -> dict:
+    def export(self) -> dict:
         """Return a dictionary of the key's specification used by the MetaCat database"""
         # Get the generic key specification, and return it if the key is retired
-        out = super().server_spec(category)
+        out = super().export()
         if self.retired:
             return out
         # If the key is actually represented as a boolean, we're done
@@ -563,10 +625,10 @@ class OptionKeySpec(KeySpec):
             return sorted(self.val_options)
         return [default] + sorted(self.val_options.keys() - {default})
 
-    def server_spec(self, category: str = "") -> dict:
+    def export(self) -> dict:
         """Return a dictionary of the key's specification used by the MetaCat database"""
         # Get the generic key specification, and return it if the key is retired
-        out = super().server_spec(category)
+        out = super().export()
         if self.retired:
             return out
         # Add the set of valid and deprecated options to the specification
@@ -637,10 +699,10 @@ class ParamKeySpec(KeySpec):
         if self.min is not None and self.max is not None and self.min > self.max:
             raise SpecError(f"Min value ({repr(self.min)}) > max value ({repr(self.max)})")
 
-    def server_spec(self, category: str = "") -> dict:
+    def export(self) -> dict:
         """Return a dictionary of the key's specification used by the MetaCat database"""
         # Get the generic key specification, and return it if the key is retired
-        out = super().server_spec(category)
+        out = super().export()
         if self.retired:
             return out
         # Add the min, max, and pattern to the specification if they are defined
@@ -749,7 +811,24 @@ def close_keys(key: str, value, init: str = "") -> list[tuple[str, int]]:
 
 # Functions for loading and verifying the metadata specification
 
-def parse(spec: dict) -> KeySpec:
+def define_category(category: str, spec: dict|str|None = None) -> Category:
+    """Add a new category to the configuration"""
+    # If this is a subcategory, make sure the parent category is defined first
+    if '.' in category:
+        define_category(category.rsplit('.', 1)[0])
+    # Check if we're redefining an existing category
+    if existing := categories.get(category, None):
+        # If this is an auto-generated category with no spec, return the existing category
+        if spec is None:
+            return existing
+        # Otherwise, redefining a category is an error
+        raise SpecError(f"Redefining existing category '{category}'")
+    # Create and return the new category
+    new_category = Category(category, spec)
+    categories[category] = new_category
+    return new_category
+
+def parse_key(spec: dict) -> KeySpec:
     """Parse a key specification from the config file and return a KeySpec object"""
     if spec.get("type", None) == "bool":
         return BoolKeySpec(spec)
@@ -759,61 +838,48 @@ def parse(spec: dict) -> KeySpec:
         return ParamKeySpec(spec)
     return KeySpec(spec)
 
-def define_category(category: str, spec: dict|str|None = None) -> Category:
-    """Add a new category to the configuration"""
-    if existing := categories.get(category, None):
-        # If we're auto-generating a category, don't overwrite an existing one
-        if spec is None:
-            return existing
-        # If we're explicitly defining a category that was already auto-generated, update it
-        if not existing.description:
-            existing.update(spec)
-            return existing
-        # Raise an error if we have duplicate explicit category definitions
-        raise SpecError(f"Redefining existing category '{category}'")
-    if format_key(category) != category:
-        raise SpecError(f"Category '{category}' does not conform to the standard format")
-    new_category = Category(category, spec)
-    categories[category] = new_category
-    if '.' in category:
-        parent = category.rsplit('.', 1)[0]
-        new_category.set_parent(define_category(parent))
-    return new_category
+def retire_key(spec: dict, reason: str):
+    """Set a key specification to retired, and make sure it is not required"""
+    # Set status to retired, raising an error if it was explicitly set to something else
+    if (status := spec.get("status", "retired")) != "retired":
+        raise SpecError(f"{reason}, but has status '{status}'")
+    spec["status"] = "retired"
+    # Make sure the key is not required, raising an error if it is
+    if (required := spec.get("required", False)):
+        required = "all" if required is True else required
+        raise SpecError(f"{reason}, but is required for '{required}' files")
 
-def define_key(key: str, spec: dict):
+def define_key(key: str, spec: dict|str|None):
     """Add a new metadata key to the configuration"""
     if key in meta_keys or key in replaced_keys:
         raise SpecError(f"Key '{key}' already exists")
     keys_by_length[len(key)].add(key)
     # Add the key to the appropriate category
-    category = None
-    if (format_key(key) == key and '.' in key):
-        category = define_category(key.rsplit('.', 1)[0])
-        category.add_key(key)
+    category = define_category(key.rsplit('.', 1)[0]) if '.' in key else categories[None]
+    category.add_key(key)
     # String specifications indicate a direct replacement for the key
     if isinstance(spec, str):
         replaced_keys[key] = spec
         return
     # Make sure the specification is a dictionary, even if it is empty
-    if not spec:
-        spec = {}
+    spec = spec if isinstance(spec, dict) else {}
+    # If the key is malformed or in a retired category, make sure it is retired
+    if format_key(key) != key:
+        retire_key(spec, f"Key '{key}' is malformed")
+    elif '.' not in key:
+        retire_key(spec, f"Key '{key}' has no category")
+    elif category.type == CatType.RETIRED:
+        retire_key(spec, f"Key '{key}' is in a retired category")
     # Try to parse the key specification dictionary
     try:
-        key_obj = parse(spec)
+        key_obj = parse_key(spec)
     except (SpecError, ValueError) as e:
         raise SpecError(f"Key '{key}': {e}") from e
     meta_keys[key] = key_obj
-    # If the key is illegal, raise an error unless it is also retired
-    if category is None:
-        if key_obj.retired:
-            return
-        if '.' not in key:
-            raise SpecError(f"Key '{key}' is missing a category prefix (must contain a '.')")
-        raise SpecError(f"Key '{key}' does not conform to the standard format")
-    # If keys are absolute requirements, mark the category as required
+    # Link the key to the appropriate condition, if any
     if key_obj.absolute:
-        category.set_required()
         conditions[None].add_key(key)
+        category.require()
     elif key_obj.required:
         conditions[key_obj.required].add_key(key)
 
@@ -856,12 +922,13 @@ def extract_field(spec_dict: dict, field: str, extras: list[str], name: str) -> 
 def load_categories(spec_dict: dict):
     """Load the category definitions from the specification"""
     cat_dict = extract_field(spec_dict, "CATEGORIES", ["CATEGORY"], "category")
-    defaults = cat_dict.pop(None, {})
-    if isinstance((required := defaults.get("required", None)), bool):
-        Category.required_default = required
-    if isinstance((restricted := defaults.get("restricted", None)), bool):
-        Category.restricted_default = restricted
-    for cat, spec in cat_dict.items():
+    # Create a null category for malformed keys that don't have a valid category prefix
+    categories[None] = Category("", {
+        "description": "Null category for keys with invalid category prefixes",
+        "type": "retired",
+    })
+    # Add categories in order, so that parents are defined before children
+    for cat, spec in sorted(cat_dict.items()):
         define_category(cat, spec)
 
 def load_conditions(spec_dict: dict):
@@ -898,7 +965,7 @@ def load_synchronization(spec_dict: dict):
     client_ver = SpecVersion(spec.pop("version"))
     synchronization["client_spec"] = client_ver
     # Get the synchronization flags, and raise an error if any are missing
-    for field in ["optional", "restricted", "conditions"]:
+    for field in ["optional", "retired", "restricted", "conditions"]:
         if (flag := spec.pop(field, None)) is None:
             raise SpecError(f"Specification is missing SYNCHRONIZATION flag '{field}'")
         synchronization[field] = flag
@@ -916,6 +983,34 @@ def load_synchronization(spec_dict: dict):
         raise SpecError(f"Local specification version {client_ver} is out of date with "
                         f"MetaCat server version {server_ver}")
     synchronization["server_spec"] = server_ver
+
+def export() -> dict:
+    """Convert the current specification to a dictionary for export to the MetaCat server"""
+    out = {}
+    retired = set()
+    optional = set()
+    for name, cat in categories.items():
+        if name is None:
+            continue
+        spec = cat.export()
+        # Skip retired categories if the synchronization flag is not set
+        if cat.type == CatType.RETIRED:
+            if not synchronization["retired"]:
+                retired.add(name)
+                continue
+        # Skip optional categories if the synchronization flag is not set
+        elif not spec["required"] and not synchronization["optional"]:
+            optional.add(name)
+            continue
+        # Otherwise, add the category to the output dictionary
+        out[name] = spec
+    if retired:
+        cats = "\n  ".join(sorted(retired))
+        print(f"Skipping {len(retired)} retired categories:\n  {cats}")
+    if optional:
+        cats = "\n  ".join(sorted(optional))
+        print(f"Skipping {len(optional)} optional categories:\n  {cats}")
+    return out
 
 def load():
     """Load the spec from the specification.yaml file"""

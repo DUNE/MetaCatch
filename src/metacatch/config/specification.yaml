@@ -18,19 +18,22 @@
 # Multiple patches on the same day may append a letter if necessary, e.g. 0.26.11.25b
 # The other fields control how the specification is applied to the MetaCat database:
 # - optional:   Validate optional keys.  If false, only required keys will be validated.
+# - retired:    Include blacklist for retired keys.
 # - restricted: Set categories to restricted by default, see the categories section below.
 # - conditions: Enable conditionally required keys, see the conditions section below.
 
 SYNCHRONIZATION:
     version:    0.26.11.25
     optional:   false
+    retired:    false
     restricted: false
     conditions: false
 
-#---------------------- MetaData Key And Category Naming ----------------------#
+#--------------------- Terminology and Naming Conventions ---------------------#
 
-# MetaCat stores file metadata as a dictionary of key, value pairs.
-# Keys must be strings, while the value type and constraints vary by key.
+# MetaCat stores dictionaries of file data, including name, namespace, ... and 'metadata'.
+# Metadata is a dictionary of key-value pairs, with string keys
+# Values may be stored as any JSON-serializable type, with constraints varying by key.
 # Keys are grouped into categories (and optionally into subcategories).
 # Categories are specified by including them in the key name separated by periods, for example
 #   "category.subcategory.parameter"
@@ -44,48 +47,62 @@ SYNCHRONIZATION:
 # - The first character of each segment must be a lowercase letter
 # - All other characters must be either lowercase letters, numbers, or underscores
 
+# There is an important distinction between defining and using metadata keys/values.
+# Defining a key means specifying attributes and constraints the key must satisfy.
+# Admin privileges are required to create or modify definitions in the MetaCat database.
+# Using a key means including it in a file's metadata dictionary when uploading to MetaCat.
+# MetaCat and MetaCatch have dfferent behaviors regarding undefined keys:
+# - MetaCat server-side validation allows use of undefined keys unless explicitly restricted
+# - MetaCatch validation does not allow use of undefined keys unless explicity allowed
+
 ################################################################################
 #                                  Categories                                  #
 ################################################################################
 
-# Categories may have an associated description, and also 'required' or 'restricted' flags.
-# If a category is required, at least one key in that category must exist.
-# Categories will automatically be flagged as required if they contain any required keys.
-# If a category is restricted, only keys explicity defined in the spec are allowed.
-# Otherwise, users may freely add new keys in unrestricted categories.
-# MetaCatch will set required to false and restricted to true by default.
-# Note that this is different from MetaCat, which sets restricted to false by default!
-# MetaCatch also allows categories to be flagged as 'retired', this is equivilant to
-# setting restricted=True, required=False, and all keys in the category to retired.
+# Categories in the MetaCat database have the following attributes:
+# - description:    A human-readable description of the category
+# - required:       boolean, if true any required keys in the category must exist
+# - restricted:     boolean, prevents use of undefined keys under the category
+# - definitions:    A dictionary of key definitions for the category
+
+# MetaCat categories are set to not required and not restricted by default.
+# Note that there is currently no way to restrict the use of undefined top-level categories.
+# Also note that it is possible to have required keys in a category that is not required.
+# This means the keys will be required only if other keys in the category exist.
+# However, a required category with no required keys is not allowed.
+
+# MetaCatch defines categories differently, with only a description and a type.
+# Keys are defined separately in the 'MetaData Keys' section below.
+# Required keys automatically set their parent categories to required.
+# A more flexible conditional requirement system is available, see the 'Conditions' section below.
+# MetaCatch treats any unknown keys as invalid, effectively setting all categories to restricted.
+# The category type modifies this behavior and the synchronization with the MetaCat database:
+# - default:    Server-side behavior controlled by the restricted synchronization flag above
+# - open:       Makes the category unrestricted for both server-side and client-side validation
+# - restricted: Sets server-side category to restricted, with definitions for all known keys
+# - retired:    Sets server-side category to restricted, without any key definitions
+
+# Setting a category to retired implies the retirement of all keys in the category.
+# Setting a category to restricted 
+
+#---------------------------- Category Definitions ----------------------------#
 
 # The CATEGORIES dictionary below contains category definitions of the form:
 #   category_name:
 #       description:    string describing the category
-#       required:       boolean (default false)
-#       restricted:     boolean (default true)
-#       retired:        boolean (default false)
+#       type:           default, open, restricted, or retired
 
-# Categories with default settings can also be defined by simply providing a description string:
+# Default categories can also be defined by simply providing a description string:
 #   category_name:      description
 
 # Categories may also be defined separately, to keep them close to the related keys.
 # This is done by prefixing the category name with CATEGORY:
 #   CATEGORY category_name: description
 
-# Note that key definitions may impact their parent categories:
-# - Any missing category definitions will be created automatically with default settings
-# - Required keys will automatically flag all parent categories as required
-
-#---------------------------- Category Definitions ----------------------------#
-
 CATEGORIES:
-    ~: # Default behavior for all categories unless overridden
-        required:       false
-        restricted:     true
-        retired:        false
     core:
         description:    "Core metadata keys"
-        required:       true
+        type:           restricted
     dune:               "DUNE-specific metadata keys"
     dune_mc:            "DUNE Monte Carlo simulation metadata keys"
     merge:              "Keys used for merge jobs"
@@ -111,6 +128,8 @@ CATEGORIES:
 # The server-side validation should apply these conditions to keys in the given category.
 # Note that the server-side validation ignores these conditions for keys outside the category!
 
+#--------------------------- Condition Definitions ----------------------------#
+
 # The CONDITIONS dictionary below contains condition definitions of the form:
 #   condition_name:
 #       expression:   string containing a boolean expression
@@ -124,8 +143,6 @@ CATEGORIES:
 
 # Condition names should be descriptive, and will be inserted into error messages as:
 #   "ERROR:     Missing key '{key_name}' is required for {condition_name} files"
-
-#--------------------------- Condition Definitions ----------------------------#
 
 CONDITIONS:
     "CAF": "core.data_tier == 'caf'"
@@ -945,62 +962,59 @@ core.progenitor_config_files:
     description: "List of origin app config files, replaced by origin.applications.config_files"
     status: retired
 
-CATEGORY progenitor: "Obsolete prototype of origin.applications"
+CATEGORY progenitor:
+    description: "Obsolete prototype of origin.applications"
+    type: retired
 progenitor.applications:
     description: "List of origin app {name, version, config} dicts"
-    status: retired
 progenitor.application_names:
     description: "List of origin app names"
-    status: retired
 progenitor.application_versions:
     description: "List of origin app versions"
-    status: retired
 progenitor.config_files:
     description: "List of origin app config files"
-    status: retired
 
-CATEGORY progenitor.applications: "Obsolete prototype of origin.applications"
+CATEGORY progenitor.applications:
+    description: "Obsolete prototype of origin.applications"
+    type: retired
 progenitor.applications.names:
     description: "List of origin app names"
-    status: retired
 progenitor.applications.versions:
     description: "Dict of origin app versions"
-    status: retired
 progenitor.applications.config_files:
     description: "Dict of origin app config files"
-    status: retired
 
-CATEGORY progenitor.gen: "Obsolete prototype of origin.applications.*[gen]"
+CATEGORY progenitor.gen:
+    description: "Obsolete prototype of origin.applications.*[gen]"
+    type: retired
 progenitor.gen.version:
     description: "Origin 'gen' app version"
-    status: retired
 progenitor.gen.config_file:
     description: "Origin 'gen' app config file"
-    status: retired
 
-CATEGORY progenitor.g4_stage1: "Obsolete prototype of origin.applications.*[g4_stage1]"
+CATEGORY progenitor.g4_stage1:
+    description: "Obsolete prototype of origin.applications.*[g4_stage1]"
+    type: retired
 progenitor.g4_stage1.version:
     description: "Origin 'g4_stage1' app version"
-    status: retired
 progenitor.g4_stage1.config_file:
     description: "Origin 'g4_stage1' app config file"
-    status: retired
 
-CATEGORY progenitor.g4_stage2: "Obsolete prototype of origin.applications.*[g4_stage2]"
+CATEGORY progenitor.g4_stage2:
+    description: "Obsolete prototype of origin.applications.*[g4_stage2]"
+    type: retired
 progenitor.g4_stage2.version:
     description: "Origin 'g4_stage2' app version"
-    status: retired
 progenitor.g4_stage2.config_file:
     description: "Origin 'g4_stage2' app config file"
-    status: retired
 
-CATEGORY progenitor.detsim: "Obsolete prototype of origin.applications.*[detsim]"
+CATEGORY progenitor.detsim:
+    description: "Obsolete prototype of origin.applications.*[detsim]"
+    type: retired
 progenitor.detsim.version:
     description: "Origin 'detsim' app version"
-    status: retired
 progenitor.detsim.config_file:
     description: "Origin 'detsim' app config file"
-    status: retired
 
 #------------------- LBNE Keys With Direct DUNE Equivalents -------------------#
 

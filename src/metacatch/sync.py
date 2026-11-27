@@ -42,40 +42,6 @@ class SyncMode(enum.IntEnum):
 
 # Functions to fetch the existing category specifications
 
-def local_categories(mode: SyncMode = SyncMode.MINIMAL):
-    """Get the categories and keys from the local MetaCatch specification"""
-    config.load()
-    categories = {}
-    opt_cats = set()
-    empty_cats = set()
-    for category, local_spec in specification.categories.items():
-        spec = local_spec.server_spec(mode <= SyncMode.BASIC)
-        # In minimal mode, only include required categories and keys
-        if mode == SyncMode.MINIMAL:
-            if not spec["required"]:
-                spec["keys"] = {}
-            else:
-                spec["keys"] = {k: v for k, v in spec["keys"].items() if v.get("required")}
-        # Skip empty categories
-        empty = False
-        for param in ("keys", "required", "restricted", "description"):
-            if param in spec and spec[param]:
-                #empty = False
-                break
-        if empty:
-            empty_cats.add(category)
-            continue
-        categories[category] = spec
-    if opt_cats:
-        print(f"Skipping {len(opt_cats)} optional categories:")
-        for cat in sorted(opt_cats):
-            print(f"  {cat}")
-    if empty_cats:
-        print(f"Skipping {len(empty_cats)} empty categories:")
-        for cat in sorted(empty_cats):
-            print(f"  {cat}")
-    return categories
-
 def read_server_category(server_spec: dict) -> tuple[str, dict]:
     """Convert a server category specification to standard format"""
     name = server_spec["path"]
@@ -434,10 +400,10 @@ def apply_changes(added: dict, changed: dict, deleted: dict):
     for path, (spec, _) in sorted(changed.items()):
         update_category(path, spec)
 
-def sync(mode: SyncMode = SyncMode.MINIMAL):
+def sync():
     """Compare the local MetaCatch specification with the online MetaCat database"""
-    print(f"Running MetaCatch synchronization in {mode.name.lower()} mode...")
-    local_cats = local_categories(mode=mode)
+    print("Running MetaCatch synchronization...")
+    local_cats = specification.export()
     server_cats = server_categories()
     added = {}
     changed = {}
@@ -466,9 +432,5 @@ def main():
     """Main function to run the MetaCatch synchronization utility"""
     parser = argparse.ArgumentParser(
         description="Synchronize the MetaCatch specification with the online MetaCat database")
-    modes = [mode.name.lower() for mode in SyncMode]
-    parser.add_argument("mode", choices=modes, default=modes[0],
-                        help=f"Synchronization mode (default: {modes[0]})")
-    args = parser.parse_args()
-    mode = SyncMode[args.mode.upper()]
-    sync(mode=mode)
+    _args = parser.parse_args()
+    sync()
